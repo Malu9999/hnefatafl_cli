@@ -72,40 +72,6 @@ impl Move {
         mask
     }
     //returns positions on path of move
-    pub fn get_inter_with_end_pos(&self) -> Vec<Position> {
-        let sx = self.start_pos.get_x();
-        let sy = self.start_pos.get_y();
-        let ex = self.end_pos.get_x();
-        let ey = self.end_pos.get_y();
-
-        let mut intermediate = Vec::<Position>::new();
-
-        if sx == ex {
-            if sy < ey {
-                for iy in sy + 1..=ey {
-                    intermediate.push(Position::new_xy(sx, iy))
-                }
-            } else {
-                for iy in (ey..sy).rev() {
-                    intermediate.push(Position::new_xy(sx, iy))
-                }
-            }
-        }
-
-        if sy == ey {
-            if sx < ex {
-                for ix in sx + 1..=ex {
-                    intermediate.push(Position::new_xy(ix, sy))
-                }
-            } else {
-                for ix in (ex..sx).rev() {
-                    intermediate.push(Position::new_xy(ix, sy))
-                }
-            }
-        }
-
-        intermediate
-    }
 }
 
 impl std::fmt::Display for Move {

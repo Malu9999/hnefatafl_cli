@@ -106,7 +106,7 @@ impl Board {
         match color {
             PieceColor::Attacker => self.attackers.remove(pos_num),
             PieceColor::Defender => {
-                if self.get_king_pos().is_some_and(|p| p.is_equal(pos)) {
+                if self.get_king_pos().is_some_and(|p| p == *pos) {
                     self.king.remove(pos_num);
                 } else {
                     self.defenders.remove(pos_num);
@@ -243,7 +243,7 @@ impl Board {
             }
 
             // check whether the considered pos is the position of the king
-            if self.get_king_pos().unwrap().is_equal(&sur_pos) {
+            if self.get_king_pos().unwrap() == sur_pos {
                 // to capture a king, it must be completely surrounded by pieces (or thrones)
                 if sur_pos
                     .get_surrounding_pos()
@@ -311,7 +311,7 @@ impl Display for Board {
 
                 match self.get_piece(&current_pos) {
                     Some(piece) => write!(f, "{} ", piece),
-                    None => write!(f, "  "),
+                    None => write!(f, ". "),
                 }?;
             }
             writeln!(f)?;

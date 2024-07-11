@@ -15,14 +15,14 @@ impl Piece {
         matches!(self, Self::King(_))
     }
 
-    pub fn is_white(&self) -> bool {
+    pub fn is_defender(&self) -> bool {
         matches!(
             self,
             Self::Pawn(PieceColor::Defender) | Self::King(PieceColor::Defender)
         )
     }
 
-    pub fn is_black(&self) -> bool {
+    pub fn is_attacker(&self) -> bool {
         matches!(
             self,
             Self::Pawn(PieceColor::Attacker) | Self::King(PieceColor::Attacker)
@@ -38,14 +38,14 @@ impl Piece {
 
     pub fn is_color(&self, color: &PieceColor) -> bool {
         match color {
-            PieceColor::Attacker => self.is_black(),
-            PieceColor::Defender => self.is_white(),
+            PieceColor::Attacker => self.is_attacker(),
+            PieceColor::Defender => self.is_defender(),
         }
     }
 
     #[allow(unused)]
     pub fn same_color(&self, other: &Piece) -> bool {
-        (self.is_black() && other.is_black()) || (self.is_white() && other.is_white())
+        (self.is_attacker() && other.is_attacker()) || (self.is_defender() && other.is_defender())
     }
 }
 
