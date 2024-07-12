@@ -7,3 +7,5 @@ edition = "2021"
 clap = { version = "4.5.7", features = ["derive"] }
 fixedbitset = "0.5.7"
 rand = "0.8.5"
+tch = "0.16.0"
+torch-sys = "0.16.0"
