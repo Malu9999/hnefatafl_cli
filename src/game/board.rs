@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use fixedbitset::FixedBitSet;
+use tch::Tensor;
 
 use super::{
     piece::{Piece, PieceColor},
@@ -99,6 +100,25 @@ impl Board {
 
     pub fn get_king_pos(&self) -> Option<Position> {
         Some(Position::new_n(self.king.maximum()?))
+    }
+
+    /// resturn one-hot encoding of the current state
+    pub fn get_observation(&self) -> Tensor {
+        let attack_vec: Vec<f32> = (0..self.attackers.len())
+            .map(|i| if self.attackers.contains(i) { 1.0 } else { 0.0 })
+            .collect();
+        let defend_vec: Vec<f32> = (0..self.defenders.len())
+            .map(|i| if self.defenders.contains(i) { 1.0 } else { 0.0 })
+            .collect();
+        let king_vec: Vec<f32> = (0..self.king.len())
+            .map(|i| if self.king.contains(i) { 1.0 } else { 0.0 })
+            .collect();
+
+        let attack = Tensor::from_slice(&attack_vec);
+        let defend = Tensor::from_slice(&defend_vec);
+        let king = Tensor::from_slice(&king_vec);
+
+        Tensor::stack(&[attack, defend, king], 0)
     }
 
     fn remove_color_piece(&mut self, pos: &Position, color: &PieceColor) {
@@ -279,13 +299,10 @@ impl Board {
         let attacker_moves_cnt = self.attacker_moves.len();
         let defender_moves_cnt = self.defender_moves.len();
         if self.get_king_pos().is_none() || defender_moves_cnt == 0 {
-            println!("Black");
             GameState::WinBlack
         } else if self.get_king_pos().unwrap().is_corner() || attacker_moves_cnt == 0 {
-            println!("White");
             GameState::WinWhite
         } else if attacker_moves_cnt == 0 || defender_moves_cnt == 0 {
-            println!("Draw");
             GameState::Draw
         } else {
             GameState::Undecided
