@@ -17,12 +17,14 @@ pub enum GameState {
     Draw,
 }
 
+#[derive(Clone)]
 pub struct Board {
     attackers: FixedBitSet,
     defenders: FixedBitSet,
     king: FixedBitSet,
     attacker_moves: Vec<Move>,
     defender_moves: Vec<Move>,
+    player: PieceColor,
 }
 
 pub const BOARDSIZE: usize = 11;
@@ -53,12 +55,14 @@ impl Board {
             king,
             attacker_moves: vec![],
             defender_moves: vec![],
+            player: PieceColor::Attacker,
         };
 
         board.update_possible_moves();
 
         board
     }
+
 
     /// Returns a random possible move for the provided color
     pub fn get_random_move_color(&self, color: &PieceColor) -> Option<Move> {
@@ -70,6 +74,10 @@ impl Board {
         }
     }
 
+    pub fn get_legal_moves(&self) -> Vec<Move> {
+        self.get_moves_color(&self.player)
+    }
+
     /// Returns a copy of the currently possible moves
     pub fn get_moves_color(&self, color: &PieceColor) -> Vec<Move> {
         match color {
@@ -78,7 +86,7 @@ impl Board {
         }
     }
 
-    pub fn get_piece(&self, pos: &Position) -> Option<Piece> {
+    fn get_piece(&self, pos: &Position) -> Option<Piece> {
         let pos_num = pos.get_num() as usize;
         if self.attackers.contains(pos_num) {
             return Some(Piece::Pawn(PieceColor::Attacker));
@@ -290,6 +298,8 @@ impl Board {
 
         // update the possible moves for our board
         self.update_possible_moves();
+
+        self.player.flip();
 
         captured_positions
     }

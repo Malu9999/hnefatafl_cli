@@ -1,3 +1,4 @@
+mod agent;
 mod game;
 mod synthesis;
 
@@ -19,7 +20,7 @@ fn main() {
 
     let (observations, targets) = rollout_with_observations(1000);
 
-    net.train(observations, targets, 100, &vs);
+    net.train(observations, targets, 50, &vs);
 
     while !board.is_game_over() {
         let mov = board.get_random_move_color(&turn).unwrap();
