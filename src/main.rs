@@ -1,7 +1,12 @@
 mod agent;
+mod eval;
 mod game;
 mod synthesis;
 
+use agent::Bot;
+use agent::{alpha_beta::policy::AlphaBetaBot, mcts::policy::Mcts};
+use eval::human_score::HumanScore;
+use eval::{random_rollout::RandomRollout, random_rollout_parallel::RandomRolloutPar, Eval};
 use game::{
     board::{Board, GameState},
     piece::PieceColor,
@@ -18,13 +23,22 @@ fn main() {
 
     let net = Network::new(&vs);
 
-    let (observations, targets) = rollout_with_observations(1000);
+    //let (observations, targets) = rollout_with_observations(1000);
 
-    net.train(observations, targets, 50, &vs);
+    let eval = <HumanScore as Eval>::init();
+
+    let mut mcts = <AlphaBetaBot<HumanScore> as Bot>::init(2.0, Some(&board), eval);
+
+    //net.train(observations, targets, 50, &vs);
 
     while !board.is_game_over() {
-        let mov = board.get_random_move_color(&turn).unwrap();
-        println!("{}", mov);
+        mcts.reset(&board);
+
+        let mov = mcts.get_next_move(&board, 1000).unwrap();
+
+        //let mov = board.get_random_move_color(&turn).unwrap();
+        //println!("{}, {}", mov, mcts.compute_depth());
+        //mcts.print_root();
 
         let captured = board.make_move_captured_positions(&mov);
 
@@ -63,8 +77,8 @@ fn rollout_with_observations(num_rollouts: usize) -> (Tensor, Tensor) {
 
         let who_won = match board.who_won() {
             GameState::Draw => 0.0,
-            GameState::WinBlack => 1.0,
-            GameState::WinWhite => -1.0,
+            GameState::WinAttacker => 1.0,
+            GameState::WinDefender => -1.0,
             GameState::Undecided => 0.0,
         };
 

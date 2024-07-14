@@ -12,8 +12,8 @@ use rand::prelude::SliceRandom;
 
 pub enum GameState {
     Undecided,
-    WinBlack,
-    WinWhite,
+    WinAttacker,
+    WinDefender,
     Draw,
 }
 
@@ -30,7 +30,7 @@ pub struct Board {
 pub const BOARDSIZE: usize = 11;
 
 impl Board {
-    pub fn init() -> Board {
+    pub fn init() -> Self {
         let mut attackers = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
         let mut defenders = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
         let mut king = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
@@ -63,6 +63,9 @@ impl Board {
         board
     }
 
+    pub fn get_random_move(&self) -> Option<Move> {
+        self.get_random_move_color(&self.player)
+    }
 
     /// Returns a random possible move for the provided color
     pub fn get_random_move_color(&self, color: &PieceColor) -> Option<Move> {
@@ -309,9 +312,9 @@ impl Board {
         let attacker_moves_cnt = self.attacker_moves.len();
         let defender_moves_cnt = self.defender_moves.len();
         if self.get_king_pos().is_none() || defender_moves_cnt == 0 {
-            GameState::WinBlack
+            GameState::WinAttacker
         } else if self.get_king_pos().unwrap().is_corner() || attacker_moves_cnt == 0 {
-            GameState::WinWhite
+            GameState::WinDefender
         } else if attacker_moves_cnt == 0 || defender_moves_cnt == 0 {
             GameState::Draw
         } else {
@@ -321,6 +324,18 @@ impl Board {
 
     pub fn is_game_over(&self) -> bool {
         !matches!(self.who_won(), GameState::Undecided)
+    }
+
+    pub fn get_player(&self) -> PieceColor {
+        self.player.clone()
+    }
+
+    pub fn get_attacker(&self) -> &FixedBitSet {
+        &self.attackers
+    }
+
+    pub fn get_defender(&self) -> &FixedBitSet {
+        &self.defenders
     }
 }
 

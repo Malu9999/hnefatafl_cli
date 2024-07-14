@@ -6,15 +6,12 @@ use std::fmt::Display;
 use std::rc::Rc;
 
 use crate::game::board::{Board, GameState};
-use crate::game::r#move::Move;
 use crate::game::piece::{Piece, PieceColor};
-
-use super::policy::EPIC_VICTORY_REWARD;
+use crate::game::r#move::Move;
 
 #[derive(Clone)]
 pub struct MctsTreenode {
     terminal: bool,
-    color: PieceColor,
     state: Board,
     mov: Option<Move>, //move used to get to this state :D
     unexplored_moves: Vec<Move>,
@@ -32,7 +29,7 @@ impl Display for MctsTreenode {
         writeln!(
             f,
             "color: {}, Qv: {}, nv: {}, #children: {}",
-            Piece::Pawn(self.color.clone()),
+            Piece::Pawn(self.get_board().get_player().clone()),
             self.q_val,
             self.n_val,
             self.children.len(),
@@ -52,11 +49,10 @@ impl Display for MctsTreenode {
 }
 
 impl MctsTreenode {
-    pub fn new_root(color: PieceColor, state: Board) -> MctsTreenode {
-        let unexplored_moves = state.possible_moves_color(&color);
+    pub fn new_root(state: Board) -> MctsTreenode {
+        let unexplored_moves = state.get_legal_moves();
         MctsTreenode {
-            terminal: false,
-            color,
+            terminal: state.is_game_over(),
             state,
             mov: None,
             unexplored_moves,
@@ -71,20 +67,18 @@ impl MctsTreenode {
     pub fn new_child_node(parent: &TreenodeRef, mov: Move) -> MctsTreenode {
         let parent_borrowed = RefCell::borrow(parent);
 
-        let child_color = parent_borrowed.color.get_opposite();
         let mut child_state = parent_borrowed.state.clone();
 
         // make move on child state and get captured positions
         child_state.make_move_captured_positions(&mov);
 
-        let mut unexplored_moves = child_state.get_moves_color(&child_color);
+        let mut unexplored_moves = child_state.get_legal_moves();
         unexplored_moves.shuffle(&mut thread_rng());
 
         // check_move(&child_state, &unexplored_moves, &child_color);
 
         MctsTreenode {
             terminal: child_state.is_game_over(),
-            color: child_color,
             state: child_state,
             mov: Some(mov),
             unexplored_moves,
@@ -145,70 +139,37 @@ impl MctsTreenode {
 
     /// performs a random rollout on self.
     pub fn rollout_policy(&self) -> (f64, usize) {
-        // if the game is already over -> return.
-        if self.state.is_game_over() {
-            return match self.state.who_won() {
-                GameState::WinWhite => (-EPIC_VICTORY_REWARD, 0),
-                GameState::WinBlack => (EPIC_VICTORY_REWARD, 0),
-                _ => (0.0, 0),
-            };
-        }
-
-        let discout_factor: f64 = 1.0;
-
-        // initialize board and color
-        let mut current_color = self.color.clone();
+        // initialize board and counter
         let mut rollout_board = self.state.clone();
-
-        // initialize counters
-        let mut counter = 0;
-        let mut reward = 0.0;
+        let mut num_moves = 0;
 
         // perform actions as long as the game is not over
         while !rollout_board.is_game_over() {
             // get a random move
-            let chosen_move = rollout_board.get_random_move_color(&current_color);
-
-            // if there is no move to be made, the game is over
-            if chosen_move.is_none() {
-                return (reward, counter);
+            if let Some(mov) = rollout_board.get_random_move() {
+                // perform random move and imcrement counter
+                rollout_board.make_move_captured_positions(&mov);
+                num_moves += 1;
+            } else {
+                // if player is unable to move, other pary wins
+                return match rollout_board.get_player() {
+                    PieceColor::Attacker => (-1.0, num_moves),
+                    PieceColor::Defender => (1.0, num_moves),
+                };
             }
-
-            // make the move
-            let mov = chosen_move.unwrap();
-            let captured_positions = rollout_board.make_move_captured_positions(&mov);
-
-            let pieces_beaten = captured_positions.len() as f64;
-
-            match current_color {
-                PieceColor::Attacker => {
-                    reward += discout_factor.powi(counter as i32) * 3.0 * pieces_beaten
-                }
-                PieceColor::Defender => {
-                    reward += discout_factor.powi(counter as i32) * -1.0 * pieces_beaten
-                } //black wr: 5% @-1.0, 0.05% @-3.0 lol
-            }; //=> white capturing pieces is good?
-
-            // flip color and increment counter
-            current_color.flip();
-            counter += 1;
         }
 
-        reward += match rollout_board.who_won() {
-            GameState::WinWhite => discout_factor.powi(counter as i32) * (-EPIC_VICTORY_REWARD),
-            GameState::WinBlack => discout_factor.powi(counter as i32) * EPIC_VICTORY_REWARD,
+        let reward = match rollout_board.who_won() {
+            GameState::WinAttacker => 1.0,
+            GameState::WinDefender => -1.0,
             _ => 0.0,
         };
 
-        (reward, counter)
+        (reward, num_moves)
     }
 
     pub fn is_terminal(&self) -> bool {
         self.terminal
-    }
-
-    pub fn get_color(&self) -> &PieceColor {
-        &self.color
     }
 
     pub fn get_mov(&self) -> &Option<Move> {
@@ -237,6 +198,10 @@ impl MctsTreenode {
 
     pub fn add_child(&mut self, new_child: MctsTreenode) {
         self.children.push(Rc::new(RefCell::new(new_child)));
+    }
+
+    pub fn get_board(&self) -> &Board {
+        &self.state
     }
 }
 

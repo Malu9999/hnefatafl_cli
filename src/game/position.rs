@@ -40,6 +40,23 @@ impl Position {
         Ok(Position::new_xy(i, j))
     }
 
+    pub fn manhatten_dist(&self, other: &Position) -> usize {
+        self.get_x().abs_diff(other.get_x()) + self.get_y().abs_diff(other.get_y())
+    }
+
+    pub fn min_dist_to_corner(&self) -> usize {
+        [
+            Position::new_n(0).manhatten_dist(self),
+            Position::new_n(10).manhatten_dist(self),
+            Position::new_n(110).manhatten_dist(self),
+            Position::new_n(120).manhatten_dist(self),
+        ]
+        .iter()
+        .min()
+        .cloned()
+        .unwrap()
+    }
+
     pub fn new_xy(x: usize, y: usize) -> Position {
         Position {
             num: x * BOARDSIZE + y,
