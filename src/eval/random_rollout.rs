@@ -9,7 +9,8 @@ use super::Eval;
 pub struct RandomRollout;
 
 impl Eval for RandomRollout {
-    fn init() -> Self {
+    type Param = usize;
+    fn init(param: usize) -> Self {
         RandomRollout
     }
 

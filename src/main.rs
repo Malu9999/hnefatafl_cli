@@ -3,9 +3,12 @@ mod eval;
 mod game;
 mod synthesis;
 
+use core::time;
+use std::thread;
+
 use agent::Bot;
 use agent::{alpha_beta::policy::AlphaBetaBot, mcts::policy::Mcts};
-use eval::human_score::HumanScore;
+use eval::human_score::{HumanScore, HumanScoreParam};
 use eval::{random_rollout::RandomRollout, random_rollout_parallel::RandomRolloutPar, Eval};
 use game::{
     board::{Board, GameState},
@@ -19,47 +22,68 @@ fn main() {
 
     let mut turn = PieceColor::Attacker;
 
-    let vs = VarStore::new(Device::cuda_if_available());
+    let mut vs = VarStore::new(Device::cuda_if_available());
 
     let net = Network::new(&vs);
 
+    let _ = vs.load("test.net");
     //let (observations, targets) = rollout_with_observations(1000);
 
-    let eval = <HumanScore as Eval>::init();
+    println!("done");
 
-    let mut mcts = <AlphaBetaBot<HumanScore> as Bot>::init(2.0, Some(&board), eval);
+    //let eval = <HumanScore as Eval>::init(HumanScoreParam {
+    //    w_ring_1: 1.0,
+    //    w_ring_2: 1.0,
+    //    w_ring_3: 1.0,
+    //    w_ring_4: 1.0,
+    //    w_corner: 1.0,
+    //    w_edge: 1.0,
+    //    w_king_dst: 100.0,
+    //});
+
+    //let mut mcts = <AlphaBetaBot<HumanScore> as Bot>::init(2.0, Some(&board), eval);
 
     //net.train(observations, targets, 50, &vs);
 
+    let _ = vs.save("test.net");
+
     while !board.is_game_over() {
-        mcts.reset(&board);
+        //mcts.reset(&board);
 
-        let mov = mcts.get_next_move(&board, 1000).unwrap();
+        //let mov = mcts.get_next_move(&board, 1000).unwrap();
 
-        //let mov = board.get_random_move_color(&turn).unwrap();
-        //println!("{}, {}", mov, mcts.compute_depth());
+        let mov = board.get_random_move().unwrap();
+        println!("{}", mov);
         //mcts.print_root();
 
         let captured = board.make_move_captured_positions(&mov);
 
         let obs = board.get_observation().unsqueeze(0);
-
         println!("{:?}", f32::try_from(net.forward(&obs)));
+
+        println!("{}", board.get_king_pos().unwrap().min_dist_to_corner());
 
         turn.flip();
         println!("{}", board);
+
+        thread::sleep(time::Duration::from_millis(500));
     }
 }
 
 fn rollout_with_observations(num_rollouts: usize) -> (Tensor, Tensor) {
-    let mut observations = Vec::new();
+    let mut observations = Vec::<Tensor>::new();
     let mut targets: Vec<f32> = Vec::new();
 
-    for i in 0..num_rollouts {
+    let mut white_wins = 0;
+    let mut black_wins = 0;
+
+    loop {
         let mut board = Board::init();
         let mut num_moves = 0;
 
         let mut turn = PieceColor::Attacker;
+
+        let mut current_obs = Vec::<Tensor>::new();
 
         while !board.is_game_over() {
             let mov = board.get_random_move_color(&turn).unwrap();
@@ -68,21 +92,34 @@ fn rollout_with_observations(num_rollouts: usize) -> (Tensor, Tensor) {
 
             let obs = board.get_observation();
 
-            observations.push(obs);
+            current_obs.push(obs);
 
             turn.flip();
 
             num_moves += 1;
         }
 
-        let who_won = match board.who_won() {
-            GameState::Draw => 0.0,
-            GameState::WinAttacker => 1.0,
-            GameState::WinDefender => -1.0,
-            GameState::Undecided => 0.0,
+        match board.who_won() {
+            GameState::WinAttacker => {
+                if black_wins < num_rollouts / 2 {
+                    observations.extend(current_obs);
+                    targets.extend(&vec![1.0; num_moves]);
+                    black_wins += 1;
+                }
+            }
+            GameState::WinDefender => {
+                if white_wins < num_rollouts / 2 {
+                    observations.extend(current_obs);
+                    targets.extend(&vec![-1.0; num_moves]);
+                    white_wins += 1;
+                }
+            }
+            _ => (),
         };
 
-        targets.extend(&vec![who_won; num_moves]);
+        if black_wins + white_wins == num_rollouts {
+            break;
+        }
     }
 
     let observations_tensor = Tensor::stack(&observations, 0);

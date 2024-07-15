@@ -5,7 +5,9 @@ pub mod random_rollout;
 pub mod random_rollout_parallel;
 
 pub trait Eval {
-    fn init() -> Self;
+    type Param;
+
+    fn init(param: Self::Param) -> Self;
 
     fn get_eval(&self, board: &Board) -> f64;
 

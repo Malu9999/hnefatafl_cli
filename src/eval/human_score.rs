@@ -4,6 +4,16 @@ use crate::game::board::{Board, GameState};
 
 use super::Eval;
 
+pub struct HumanScoreParam {
+    pub(crate) w_ring_1: f64,
+    pub(crate) w_ring_2: f64,
+    pub(crate) w_ring_3: f64,
+    pub(crate) w_ring_4: f64,
+    pub(crate) w_corner: f64,
+    pub(crate) w_edge: f64,
+    pub(crate) w_king_dst: f64,
+}
+
 pub struct HumanScore {
     w_ring_1: f64,
     w_ring_2: f64,
@@ -21,15 +31,17 @@ pub struct HumanScore {
 }
 
 impl Eval for HumanScore {
-    fn init() -> Self {
+    type Param = HumanScoreParam;
+
+    fn init(param: HumanScoreParam) -> Self {
         HumanScore {
-            w_ring_1: 1.0,
-            w_ring_2: 1.0,
-            w_ring_3: 1.0,
-            w_ring_4: 1.0,
-            w_king_dst: 10.0,
-            w_edge: 1.0,
-            w_corner: 1.0,
+            w_ring_1: param.w_ring_1,
+            w_ring_2: param.w_ring_2,
+            w_ring_3: param.w_ring_3,
+            w_ring_4: param.w_ring_4,
+            w_king_dst: param.w_king_dst,
+            w_edge: param.w_edge,
+            w_corner: param.w_corner,
             ring_1: fixedbitset_from_bitstring("0000000000000000000000000000000000000000000000001000000000101000000000100000000000000000000000000000000000000000000000000"),
             ring_2: fixedbitset_from_bitstring("0000000000000000000000000000000000000010000000001010000000100010000000101000000000100000000000000000000000000000000000000"),
             ring_3: fixedbitset_from_bitstring("0000000000000000000000000001000000000101000000010001000001000001000001000100000001010000000001000000000000000000000000000"),
@@ -53,18 +65,11 @@ impl Eval for HumanScore {
         let black_on_ring_4 = self.ring_4.intersection_count(board.get_attacker()) as f64;
         let black_on_corners = self.corner.intersection_count(board.get_attacker()) as f64;
 
-        let winner = match board.who_won() {
-            GameState::WinAttacker => 1000.0,
-            GameState::WinDefender => -1000.0,
-            _ => 0.0,
-        };
-
         self.w_ring_1 * black_on_ring_1
             + self.w_ring_2 * black_on_ring_2
             + self.w_ring_3 * black_on_ring_3
             + self.w_ring_4 * black_on_ring_4
             + self.w_corner * black_on_corners
-            + winner
             + self.w_king_dst * board.get_king_pos().unwrap().min_dist_to_corner() as f64
     }
 

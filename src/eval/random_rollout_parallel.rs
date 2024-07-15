@@ -11,7 +11,9 @@ use super::Eval;
 pub struct RandomRolloutPar;
 
 impl Eval for RandomRolloutPar {
-    fn init() -> Self {
+    type Param = usize;
+
+    fn init(param: usize) -> Self {
         RandomRolloutPar
     }
 

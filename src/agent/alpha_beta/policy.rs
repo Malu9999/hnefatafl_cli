@@ -31,7 +31,10 @@ impl<T: Eval> AlphaBetaBot<T> {
         if max_player {
             let mut max_eval = f64::NEG_INFINITY;
 
-            for mov in board.get_legal_moves() {
+            let mut legal_moves = board.get_legal_moves();
+            legal_moves.shuffle(&mut thread_rng());
+
+            for mov in legal_moves {
                 let mut child = board.clone();
                 child.make_move_captured_positions(&mov);
 
@@ -49,7 +52,10 @@ impl<T: Eval> AlphaBetaBot<T> {
         } else {
             let mut min_eval = f64::INFINITY;
 
-            for mov in board.get_legal_moves() {
+            let mut legal_moves = board.get_legal_moves();
+            legal_moves.shuffle(&mut thread_rng());
+
+            for mov in legal_moves {
                 let mut child = board.clone();
                 child.make_move_captured_positions(&mov);
 
@@ -100,7 +106,7 @@ impl<T: Eval> Bot for AlphaBetaBot<T> {
             current_board.make_move_captured_positions(&mov);
             let val = self.alpha_beta(
                 current_board,
-                1,
+                0,
                 f64::NEG_INFINITY,
                 f64::INFINITY,
                 !black_gaming,
