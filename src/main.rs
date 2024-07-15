@@ -123,7 +123,9 @@ fn rollout_with_observations(num_rollouts: usize) -> (Tensor, Tensor) {
     }
 
     let observations_tensor = Tensor::stack(&observations, 0);
-    let targets_tensor = Tensor::from_slice(&targets).unsqueeze(1);
+    let targets_tensor = Tensor::from_slice(&targets)
+        .unsqueeze(1)
+        .to_device(Device::cuda_if_available());
 
     (observations_tensor, targets_tensor)
 }

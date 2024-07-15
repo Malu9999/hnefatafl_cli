@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use fixedbitset::FixedBitSet;
-use tch::Tensor;
+use tch::{Device, Tensor};
 
 use super::{
     piece::{Piece, PieceColor},
@@ -125,9 +125,9 @@ impl Board {
             .map(|i| if self.king.contains(i) { 1.0 } else { 0.0 })
             .collect();
 
-        let attack = Tensor::from_slice(&attack_vec);
-        let defend = Tensor::from_slice(&defend_vec);
-        let king = Tensor::from_slice(&king_vec);
+        let attack = Tensor::from_slice(&attack_vec).to_device(Device::cuda_if_available());
+        let defend = Tensor::from_slice(&defend_vec).to_device(Device::cuda_if_available());
+        let king = Tensor::from_slice(&king_vec).to_device(Device::cuda_if_available());
 
         Tensor::stack(&[attack, defend, king], 0)
     }
