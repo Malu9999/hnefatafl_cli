@@ -27,7 +27,7 @@ fn main() {
     let net = Network::new(&vs);
 
     let _ = vs.load("test.net");
-    //let (observations, targets) = rollout_with_observations(1000);
+    let (observations, targets) = rollout_with_observations(1000);
 
     println!("done");
 
@@ -43,7 +43,7 @@ fn main() {
 
     //let mut mcts = <AlphaBetaBot<HumanScore> as Bot>::init(2.0, Some(&board), eval);
 
-    //net.train(observations, targets, 50, &vs);
+    net.train(observations, targets, 1000, &vs);
 
     let _ = vs.save("test.net");
 
@@ -58,7 +58,7 @@ fn main() {
 
         let captured = board.make_move_captured_positions(&mov);
 
-        let obs = board.get_observation().unsqueeze(0);
+        let obs = board.get_observation().unsqueeze(0).to_device(Device::cuda_if_available());
         println!("{:?}", f32::try_from(net.forward(&obs)));
 
         println!("{}", board.get_king_pos().unwrap().min_dist_to_corner());
@@ -105,6 +105,9 @@ fn rollout_with_observations(num_rollouts: usize) -> (Tensor, Tensor) {
                     observations.extend(current_obs);
                     targets.extend(&vec![1.0; num_moves]);
                     black_wins += 1;
+                    if (black_wins + white_wins) % 10 == 0{
+                        println!("{} {}", black_wins, white_wins);
+                    }
                 }
             }
             GameState::WinDefender => {
@@ -112,17 +115,22 @@ fn rollout_with_observations(num_rollouts: usize) -> (Tensor, Tensor) {
                     observations.extend(current_obs);
                     targets.extend(&vec![-1.0; num_moves]);
                     white_wins += 1;
+                    if (black_wins + white_wins) % 10 == 0{
+                        println!("{} {}", black_wins, white_wins);
+                    }
                 }
             }
             _ => (),
         };
+
+        
 
         if black_wins + white_wins == num_rollouts {
             break;
         }
     }
 
-    let observations_tensor = Tensor::stack(&observations, 0);
+    let observations_tensor = Tensor::stack(&observations, 0).to_device(Device::cuda_if_available());
     let targets_tensor = Tensor::from_slice(&targets)
         .unsqueeze(1)
         .to_device(Device::cuda_if_available());
