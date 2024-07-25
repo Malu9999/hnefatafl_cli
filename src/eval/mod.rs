@@ -1,6 +1,7 @@
 use crate::game::{board::Board, r#move::Move};
 
 pub mod human_score;
+pub mod neural_net;
 pub mod random_rollout;
 pub mod random_rollout_parallel;
 

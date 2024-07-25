@@ -124,12 +124,19 @@ impl Board {
         let king_vec: Vec<f32> = (0..self.king.len())
             .map(|i| if self.king.contains(i) { 1.0 } else { 0.0 })
             .collect();
+        let player_vec: Vec<f32> = (0..self.defenders.len())
+            .map(|_| match self.player {
+                PieceColor::Attacker => -1.0,
+                PieceColor::Defender => 1.0,
+            })
+            .collect();
 
         let attack = Tensor::from_slice(&attack_vec);
         let defend = Tensor::from_slice(&defend_vec);
         let king = Tensor::from_slice(&king_vec);
+        let player = Tensor::from_slice(&player_vec);
 
-        Tensor::stack(&[attack, defend, king], 0)
+        Tensor::stack(&[attack, defend, king, player], 0)
     }
 
     fn remove_color_piece(&mut self, pos: &Position, color: &PieceColor) {

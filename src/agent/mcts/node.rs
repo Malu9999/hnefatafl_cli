@@ -4,9 +4,10 @@ use rand::thread_rng;
 use std::cell::RefCell;
 use std::fmt::Display;
 use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
-use crate::game::board::{Board, GameState};
-use crate::game::piece::{Piece, PieceColor};
+use crate::game::board::Board;
+use crate::game::piece::Piece;
 use crate::game::r#move::Move;
 
 #[derive(Clone)]
@@ -22,31 +23,7 @@ pub struct MctsTreenode {
     parent: Option<TreenodeRef>,
 }
 
-pub type TreenodeRef = Rc<RefCell<MctsTreenode>>;
-
-impl Display for MctsTreenode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(
-            f,
-            "color: {}, Qv: {}, nv: {}, #children: {}",
-            Piece::Pawn(self.get_board().get_player().clone()),
-            self.q_val,
-            self.n_val,
-            self.children.len(),
-            // self.state
-        )?;
-        for (idx, child) in self.children.iter().enumerate() {
-            writeln!(
-                f,
-                "{idx}: Q_val: {}, # played: {}, move: {}",
-                RefCell::borrow(child).q_val,
-                RefCell::borrow(child).n_val,
-                RefCell::borrow(child).mov.as_ref().unwrap()
-            )?;
-        }
-        Ok(())
-    }
-}
+pub type TreenodeRef = Arc<RwLock<MctsTreenode>>;
 
 impl MctsTreenode {
     pub fn new_root(state: Board) -> MctsTreenode {
@@ -65,7 +42,7 @@ impl MctsTreenode {
     }
 
     pub fn new_child_node(parent: &TreenodeRef, mov: Move) -> MctsTreenode {
-        let parent_borrowed = RefCell::borrow(parent);
+        let parent_borrowed = parent.read().unwrap();
 
         let mut child_state = parent_borrowed.state.clone();
 
@@ -86,7 +63,7 @@ impl MctsTreenode {
             q_val: 0.0,
             n_val: 0,
             children: vec![],
-            parent: Some(Rc::clone(parent)),
+            parent: Some(Arc::clone(parent)),
         }
     }
 
@@ -96,20 +73,20 @@ impl MctsTreenode {
         let mut maxchild: Option<&TreenodeRef> = None;
 
         for child in &self.children {
-            let child_ucb_val = RefCell::borrow(child).compute_ucb_val(expl_param);
+            let child_ucb_val = child.read().unwrap().compute_ucb_val(expl_param);
             if child_ucb_val > maxucbval {
                 maxucbval = child_ucb_val;
                 maxchild = Some(child);
             }
         }
 
-        Some(Rc::clone(maxchild?))
+        Some(Arc::clone(maxchild?))
     }
 
     /// Computes the UCB1 value of itself.
     fn compute_ucb_val(&self, expl_param: f64) -> f64 {
         let nvf = self.n_val as f64;
-        let nvf_parent = RefCell::borrow(self.parent.as_ref().unwrap()).n_val as f64;
+        let nvf_parent = self.parent.as_ref().unwrap().read().unwrap().n_val as f64;
 
         self.q_val / nvf + expl_param * (2.0 * nvf_parent.ln() / nvf).sqrt()
     }
@@ -121,7 +98,7 @@ impl MctsTreenode {
         self.q_val += outcome;
 
         if let Some(parent) = &self.parent {
-            RefCell::borrow_mut(parent).back_propagation(-1.0 * outcome);
+            parent.write().unwrap().back_propagation(-1.0 * outcome);
         }
     }
 
@@ -135,37 +112,6 @@ impl MctsTreenode {
         }
         self.unexplored_moves_index += 1;
         Some(self.unexplored_moves[pre_i].clone())
-    }
-
-    /// performs a random rollout on self.
-    pub fn rollout_policy(&self) -> (f64, usize) {
-        // initialize board and counter
-        let mut rollout_board = self.state.clone();
-        let mut num_moves = 0;
-
-        // perform actions as long as the game is not over
-        while !rollout_board.is_game_over() {
-            // get a random move
-            if let Some(mov) = rollout_board.get_random_move() {
-                // perform random move and imcrement counter
-                rollout_board.make_move_captured_positions(&mov);
-                num_moves += 1;
-            } else {
-                // if player is unable to move, other pary wins
-                return match rollout_board.get_player() {
-                    PieceColor::Attacker => (-1.0, num_moves),
-                    PieceColor::Defender => (1.0, num_moves),
-                };
-            }
-        }
-
-        let reward = match rollout_board.who_won() {
-            GameState::WinAttacker => 1.0,
-            GameState::WinDefender => -1.0,
-            _ => 0.0,
-        };
-
-        (reward, num_moves)
     }
 
     pub fn is_terminal(&self) -> bool {
@@ -197,7 +143,7 @@ impl MctsTreenode {
     }
 
     pub fn add_child(&mut self, new_child: MctsTreenode) {
-        self.children.push(Rc::new(RefCell::new(new_child)));
+        self.children.push(Arc::new(RwLock::new(new_child)));
     }
 
     pub fn get_board(&self) -> &Board {
@@ -205,15 +151,26 @@ impl MctsTreenode {
     }
 }
 
-/// A simple function that checks if the moves computed by the update move funtion
-/// actually coicide with the correct possible moves computation
-/// This function meant for debugging purposes only
-#[allow(unused)]
-fn check_move(board: &Board, computed_moves: &[Move], color: &PieceColor) {
-    // println!("{}", board);
-    let mut a = computed_moves.to_owned();
-    let mut a_cmp = board.possible_moves_color(color);
-    a.sort();
-    a_cmp.sort();
-    assert_eq!(a, a_cmp);
+impl Display for MctsTreenode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "color: {}, Qv: {}, nv: {}, #children: {}",
+            Piece::Pawn(self.get_board().get_player().clone()),
+            self.q_val,
+            self.n_val,
+            self.children.len(),
+            // self.state
+        )?;
+        for (idx, child) in self.children.iter().enumerate() {
+            writeln!(
+                f,
+                "{idx}: Q_val: {}, # played: {}, move: {}",
+                child.read().unwrap().q_val,
+                child.read().unwrap().n_val,
+                child.read().unwrap().mov.as_ref().unwrap()
+            )?;
+        }
+        Ok(())
+    }
 }

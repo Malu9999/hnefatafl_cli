@@ -55,8 +55,8 @@ impl EvalInit for HumanScore {
 impl Eval for HumanScore {
     fn get_eval(&self, board: &Board) -> f64 {
         match board.who_won() {
-            GameState::WinAttacker => return 1000.0,
-            GameState::WinDefender => return -1000.0,
+            GameState::WinAttacker => return 100.0,
+            GameState::WinDefender => return -100.0,
             GameState::Draw => return 0.0,
             GameState::Undecided => {}
         };
@@ -72,7 +72,7 @@ impl Eval for HumanScore {
             + self.w_ring_3 * black_on_ring_3
             + self.w_ring_4 * black_on_ring_4
             + self.w_corner * black_on_corners
-            + self.w_king_dst * board.get_king_pos().unwrap().min_dist_to_corner() as f64
+            + self.w_king_dst * (10 - board.get_king_pos().unwrap().min_dist_to_corner()) as f64
     }
 
     fn update(&mut self, board: Board) {

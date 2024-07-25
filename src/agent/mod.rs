@@ -5,6 +5,7 @@ use crate::{
 
 pub mod alpha_beta;
 pub mod mcts;
+pub mod random;
 
 pub trait BotInit {
     type Ev: Eval;
