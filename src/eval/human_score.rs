@@ -2,7 +2,7 @@ use fixedbitset::FixedBitSet;
 
 use crate::game::board::{Board, GameState};
 
-use super::Eval;
+use super::{Eval, EvalInit};
 
 pub struct HumanScoreParam {
     pub(crate) w_ring_1: f64,
@@ -30,10 +30,10 @@ pub struct HumanScore {
     edge: FixedBitSet,
 }
 
-impl Eval for HumanScore {
+impl EvalInit for HumanScore {
     type Param = HumanScoreParam;
 
-    fn init(param: HumanScoreParam) -> Self {
+    fn new(param: Self::Param) -> Self {
         HumanScore {
             w_ring_1: param.w_ring_1,
             w_ring_2: param.w_ring_2,
@@ -50,7 +50,9 @@ impl Eval for HumanScore {
             edge: fixedbitset_from_bitstring("1111111111110000000001100000000011000000000110000000001100000000011000000000110000000001100000000011000000000111111111111"),
         }
     }
+}
 
+impl Eval for HumanScore {
     fn get_eval(&self, board: &Board) -> f64 {
         match board.who_won() {
             GameState::WinAttacker => return 1000.0,

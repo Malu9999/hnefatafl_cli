@@ -1,5 +1,5 @@
 use crate::{
-    agent::Bot,
+    agent::{Bot, BotInit},
     eval::Eval,
     game::{
         board::Board,
@@ -74,17 +74,20 @@ impl<T: Eval> AlphaBetaBot<T> {
     }
 }
 
-impl<T: Eval> Bot for AlphaBetaBot<T> {
+impl<T: Eval> BotInit for AlphaBetaBot<T> {
     type Ev = T;
+    type Params = usize;
 
-    fn init(exploration_param: f64, board: Option<&Board>, eval_fn: Self::Ev) -> Self {
+    fn new(board: Option<&Board>, _bot_params: Self::Params, eval_fn: Self::Ev) -> Self {
         AlphaBetaBot {
-            board: board.unwrap_or(&Board::init()).clone(),
+            board: board.unwrap_or(&Board::new()).clone(),
             eval_fn,
         }
     }
+}
 
-    fn get_next_move(&mut self, board: &Board, time: u128) -> Option<Move> {
+impl<T: Eval> Bot for AlphaBetaBot<T> {
+    fn get_next_move(&mut self, board: &Board, _time: u128) -> Option<Move> {
         self.reset(board);
 
         let black_gaming =

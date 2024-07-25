@@ -6,17 +6,19 @@ use crate::game::{
     r#move::Move,
 };
 
-use super::Eval;
+use super::{Eval, EvalInit};
 
 pub struct RandomRolloutPar;
 
-impl Eval for RandomRolloutPar {
+impl EvalInit for RandomRolloutPar {
     type Param = usize;
 
-    fn init(param: usize) -> Self {
+    fn new(param: Self::Param) -> Self {
         RandomRolloutPar
     }
+}
 
+impl Eval for RandomRolloutPar {
     fn get_eval(&self, board: &Board) -> f64 {
         let num_threads = thread::available_parallelism().unwrap().get() * 4;
 

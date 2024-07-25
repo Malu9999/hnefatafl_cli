@@ -4,16 +4,19 @@ use crate::game::{
     r#move::Move,
 };
 
-use super::Eval;
+use super::{Eval, EvalInit};
 
 pub struct RandomRollout;
 
-impl Eval for RandomRollout {
+impl EvalInit for RandomRollout {
     type Param = usize;
-    fn init(param: usize) -> Self {
+
+    fn new(param: Self::Param) -> Self {
         RandomRollout
     }
+}
 
+impl Eval for RandomRollout {
     fn get_eval(&self, board: &Board) -> f64 {
         let mut rollout_board = board.clone();
 

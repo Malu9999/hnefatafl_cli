@@ -51,9 +51,8 @@ impl Position {
             Position::new_n(110).manhatten_dist(self),
             Position::new_n(120).manhatten_dist(self),
         ]
-        .iter()
+        .into_iter()
         .min()
-        .cloned()
         .unwrap()
     }
 
@@ -68,11 +67,11 @@ impl Position {
     }
 
     pub fn get_x(&self) -> usize {
-        (self.num / BOARDSIZE) as usize
+        self.num / BOARDSIZE
     }
 
     pub fn get_y(&self) -> usize {
-        (self.num % BOARDSIZE) as usize
+        self.num % BOARDSIZE
     }
 
     pub fn get_num(&self) -> usize {

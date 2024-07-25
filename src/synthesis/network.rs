@@ -1,30 +1,42 @@
 use tch::{
     self,
-    nn::{self, LinearConfig, OptimizerConfig},
+    nn::{self, LinearConfig, Module, OptimizerConfig, Sequential},
     Tensor,
 };
 
+const INPUT_DIM: i64 = 363;
+const HIDDEN_LAYER: i64 = INPUT_DIM * 2;
+const OUTPUT_DIM: i64 = 1;
+
 pub struct Network {
-    l_1: nn::Linear,
-    l_2: nn::Linear,
+    net: Sequential,
 }
 
 impl Network {
     pub fn new(vs: &nn::VarStore) -> Self {
         let root = &vs.root();
 
-        Self {
-            l_1: nn::linear(root / "l_1", 363, 726, Default::default()),
-            l_2: nn::linear(root / "l_2", 726, 1, Default::default()),
-        }
+        let net = nn::seq()
+            .add(nn::linear(
+                root / "layer_1",
+                INPUT_DIM,
+                HIDDEN_LAYER,
+                Default::default(),
+            ))
+            .add_fn(|xs| xs.relu())
+            .add(nn::linear(
+                root / "layer_2",
+                HIDDEN_LAYER,
+                OUTPUT_DIM,
+                Default::default(),
+            ))
+            .add_fn(|xs| xs.tanh());
+
+        Self { net }
     }
 
     pub fn forward(&self, xs: &Tensor) -> Tensor {
-        xs.flat_view()
-            .apply(&self.l_1)
-            .relu()
-            .apply(&self.l_2)
-            .tanh()
+        self.net.forward(&xs.flat_view())
     }
 
     pub fn train(&self, data: Tensor, targets: Tensor, max_epochs: usize, vs: &nn::VarStore) {
@@ -43,5 +55,7 @@ impl Network {
                 println!("Epoch: {:3}, Loss: {:?}", epoch, f32::try_from(loss));
             }
         }
+
+        vs.save("model.ot").unwrap()
     }
 }

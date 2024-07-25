@@ -6,11 +6,14 @@ use crate::{
 pub mod alpha_beta;
 pub mod mcts;
 
-pub trait Bot {
+pub trait BotInit {
     type Ev: Eval;
+    type Params;
 
-    fn init(exploration_param: f64, board: Option<&Board>, eval_fn: Self::Ev) -> Self;
+    fn new(board: Option<&Board>, bot_params: Self::Params, eval_fn: Self::Ev) -> Self;
+}
 
+pub trait Bot {
     fn get_next_move(&mut self, board: &Board, time: u128) -> Option<Move>;
 
     fn reset(&mut self, board: &Board);

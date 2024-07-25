@@ -4,11 +4,13 @@ pub mod human_score;
 pub mod random_rollout;
 pub mod random_rollout_parallel;
 
-pub trait Eval {
+pub trait EvalInit {
     type Param;
 
-    fn init(param: Self::Param) -> Self;
+    fn new(param: Self::Param) -> Self;
+}
 
+pub trait Eval {
     fn get_eval(&self, board: &Board) -> f64;
 
     fn update(&mut self, board: Board);

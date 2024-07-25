@@ -30,7 +30,7 @@ pub struct Board {
 pub const BOARDSIZE: usize = 11;
 
 impl Board {
-    pub fn init() -> Self {
+    pub fn new() -> Self {
         let mut attackers = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
         let mut defenders = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
         let mut king = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
@@ -186,7 +186,7 @@ impl Board {
         let start_x = pos.get_x();
         let start_y = pos.get_y();
 
-        let mut possible_moves = Vec::<Move>::with_capacity(20);
+        let mut possible_moves = Vec::<Move>::with_capacity(40);
 
         // down
         for nx in start_x + 1..BOARDSIZE {

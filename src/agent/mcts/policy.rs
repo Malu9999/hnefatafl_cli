@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::time;
 
-use crate::agent::Bot;
+use crate::agent::{Bot, BotInit};
 use crate::eval::{self, Eval};
 use crate::game::piece::PieceColor;
 use crate::game::{board::Board, r#move::Move};
@@ -158,24 +158,27 @@ impl<T: Eval> Mcts<T> {
     }
 }
 
-impl<T: Eval> Bot for Mcts<T> {
+impl<T: Eval> BotInit for Mcts<T> {
     type Ev = T;
+    type Params = f64;
 
     /// creates a new MctsBot.
     /// For this, an exporation_parameter must be provided which will be used in
     /// the UCB_1 formula for decision-making in the tree-policy of MCTS.
     /// Moreover, the color of the root node must be provided.
-    fn init(exploration_param: f64, board: Option<&Board>, eval_fn: T) -> Self {
+    fn new(board: Option<&Board>, bot_params: Self::Params, eval_fn: T) -> Self {
         Mcts {
-            exploration_param,
+            exploration_param: bot_params,
             tree_root: Rc::new(RefCell::new(MctsTreenode::new_root(
-                board.unwrap_or(&Board::init()).clone(),
+                board.unwrap_or(&Board::new()).clone(),
             ))),
             num_nodes: 0,
             eval_fn,
         }
     }
+}
 
+impl<T: Eval> Bot for Mcts<T> {
     fn get_next_move(&mut self, board: &Board, time_limit: u128) -> Option<Move> {
         self.reset_to(self.exploration_param, board);
         self.grow_with_time_limit(time_limit);
