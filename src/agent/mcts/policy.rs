@@ -41,7 +41,6 @@ impl<T: Eval> Mcts<T> {
         let mut incumbent_mov: Option<Move> = None;
 
         let root_borrowed = self.tree_root.read().unwrap();
-        println!("{}", root_borrowed);
         let children: &Vec<TreenodeRef> = root_borrowed.get_children();
 
         for child in children.iter() {
