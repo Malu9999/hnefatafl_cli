@@ -1,5 +1,7 @@
 use std::num::ParseIntError;
 
+use serde::{Deserialize, Serialize};
+
 use super::board::BOARDSIZE;
 
 #[derive(Debug)]
@@ -13,7 +15,7 @@ enum PositionErrorKind {
     IntParsing(ParseIntError),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Position {
     num: usize,
 }
@@ -139,12 +141,7 @@ impl Position {
 
 impl std::fmt::Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "({}, {})",
-            self.get_x(),
-            (65 + self.get_y() as u8) as char
-        )
+        write!(f, "{}{}", self.get_x(), (65 + self.get_y() as u8) as char)
     }
 }
 

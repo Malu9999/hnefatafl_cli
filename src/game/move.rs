@@ -1,6 +1,9 @@
 use std::str::SplitWhitespace;
 
 use fixedbitset::FixedBitSet;
+use serde::{Deserialize, Serialize};
+
+use crate::Action;
 
 use super::{
     board::BOARDSIZE,
@@ -63,6 +66,25 @@ impl Move {
 
     pub fn get_end_pos(&self) -> &Position {
         &self.end_pos
+    }
+
+    pub fn from_id(id: usize) -> Move {
+        let start_pos = Position::new_n(id / 121);
+        let end_pos = Position::new_n(id % 121);
+
+        Move::new(start_pos, end_pos)
+    }
+
+    pub fn to_id(&self) -> usize {
+        self.get_start_pos().get_num() * 121 + self.get_end_pos().get_num()
+    }
+
+    pub fn to_action(&self) -> Action {
+        Action {
+            id: self.to_id(),
+            start_pos: self.get_start_pos().to_string(),
+            end_pos: self.get_end_pos().to_string(),
+        }
     }
 
     pub fn get_mask(&self) -> FixedBitSet {

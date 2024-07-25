@@ -22,6 +22,7 @@ pub struct Board {
     king: FixedBitSet,
     attacker_moves: Vec<Move>,
     defender_moves: Vec<Move>,
+    turn: PieceColor,
 }
 
 pub const BOARDSIZE: usize = 11;
@@ -52,6 +53,7 @@ impl Board {
             king,
             attacker_moves: vec![],
             defender_moves: vec![],
+            turn: PieceColor::Attacker,
         };
 
         board.update_possible_moves();
@@ -67,6 +69,10 @@ impl Board {
             PieceColor::Attacker => self.attacker_moves.choose(&mut rng).cloned(),
             PieceColor::Defender => self.defender_moves.choose(&mut rng).cloned(),
         }
+    }
+
+    pub fn get_legal_moves(&self) -> Vec<Move> {
+        self.get_moves_color(&self.turn)
     }
 
     /// Returns a copy of the currently possible moves
@@ -125,6 +131,10 @@ impl Board {
     pub fn update_possible_moves(&mut self) {
         self.attacker_moves = self.possible_moves_color(&PieceColor::Attacker);
         self.defender_moves = self.possible_moves_color(&PieceColor::Defender);
+    }
+
+    pub fn get_turn(&self) -> PieceColor {
+        self.turn.clone()
     }
 
     /// Computes the possible moves from state self for the given color
@@ -270,6 +280,8 @@ impl Board {
 
         // update the possible moves for our board
         self.update_possible_moves();
+
+        self.turn.flip();
 
         captured_positions
     }
