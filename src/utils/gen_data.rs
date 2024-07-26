@@ -60,6 +60,8 @@ impl Generator {
             total_white_wins += white_wins;
         }
 
+        println!("{}", observations.len());
+
         let observations_tensor =
             Tensor::stack(&observations, 0).to_device(Device::cuda_if_available());
         let targets_tensor = Tensor::from_slice(&targets)
@@ -120,6 +122,7 @@ fn rollout_with_observations(
                     observations.extend(current_obs);
                     targets.extend(&vec![1.0; num_moves]);
                 }
+                println!("new_black");
                 black_wins += 1;
             }
             GameState::WinDefender => {
@@ -127,6 +130,7 @@ fn rollout_with_observations(
                     observations.extend(current_obs);
                     targets.extend(&vec![-1.0; num_moves]);
                 }
+                println!("new_white");
                 white_wins += 1;
             }
             _ => (),

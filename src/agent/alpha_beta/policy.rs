@@ -32,6 +32,7 @@ impl<T: Eval> AlphaBetaBot<T> {
         first_move: Option<Move>,
     ) -> f64 {
         if depth == 0 || board.is_game_over() {
+            let factor = if max_player { 1.0 } else { -1.0 };
             if board.is_game_over() {
                 let addition: f64 = match board.who_won() {
                     crate::game::board::GameState::Undecided => 0,
@@ -39,9 +40,9 @@ impl<T: Eval> AlphaBetaBot<T> {
                     crate::game::board::GameState::WinDefender => dist_from_root as i32,
                     crate::game::board::GameState::Draw => 0,
                 } as f64;
-                return self.eval_fn.get_eval(&board) + addition;
+                return factor * self.eval_fn.get_eval(&board) + addition;
             } else {
-                return self.eval_fn.get_eval(&board);
+                return factor * self.eval_fn.get_eval(&board);
             }
         }
 

@@ -23,8 +23,7 @@ use tch::{nn::VarStore, Device, Tensor};
 use utils::gen_data::{self, Generator};
 
 fn main() {
-    help_me();
-    /*let mut board = Board::new();
+    let mut board = Board::new();
 
     let mut turn = PieceColor::Attacker;
 
@@ -40,9 +39,9 @@ fn main() {
     let eval = HumanScore::new(HumanScoreParam {
         w_ring_1: 0.0,
         w_ring_2: 0.0,
-        w_ring_3: 0.0,
+        w_ring_3: 3.0,
         w_ring_4: 0.0,
-        w_corner: -1.0,
+        w_corner: 1.0,
         w_edge: 0.0,
         w_king_dst: -1.0,
     });
@@ -61,8 +60,8 @@ fn main() {
         //mcts.reset(&board);
 
         let mov = match turn {
-            PieceColor::Attacker => mcts.get_next_move(&board, 100).unwrap(),
-            PieceColor::Defender => mcts.get_next_move(&board, 100).unwrap(),
+            PieceColor::Attacker => alphabeta.get_next_move(&board, 100).unwrap(),
+            PieceColor::Defender => alphabeta.get_next_move(&board, 1000).unwrap(),
         };
 
         //let mov = board.get_random_move().unwrap();
@@ -83,7 +82,7 @@ fn main() {
         println!("{}", board);
 
         thread::sleep(time::Duration::from_millis(500));
-    }*/
+    }
 }
 
 fn help_me() {
@@ -93,9 +92,9 @@ fn help_me() {
         net.save("old.ot");
 
         // gen training data
-        let gen = Generator::new(112);
+        let gen = Generator::new(16);
         let (observations, targets, _, _) =
-            gen.generate(false, "old.ot".to_string(), "old.ot".to_string());
+            gen.generate(true, "old.ot".to_string(), "old.ot".to_string());
 
         net.train(observations, targets, 10);
 
