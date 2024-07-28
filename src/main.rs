@@ -75,7 +75,7 @@ fn main() {
         simple_taining_loop();
     } else if mode == 4 {
         watch_game_with_eval();
-    }else {
+    } else {
         println!("You didn't choose a valid play mode.");
     }
 
@@ -298,12 +298,12 @@ fn watch_game_with_eval() {
 
     let mut board = Board::new();
 
+    let mut net = Network::new();
+
+    net.load("old.ot");
+
     while !board.is_game_over() {
         //mcts.reset(&board);
-
-        let mut net = Network::new();
-
-        net.load("checkpoint.ot");
 
         let mov = match turn {
             PieceColor::Attacker => random.get_next_move(&board, 100).unwrap(),
@@ -334,17 +334,17 @@ fn watch_game_with_eval() {
 fn simple_taining_loop() {
     let mut net = Network::new();
 
-    //net.load("checkpoint.ot");
+    net.load("checkpoint.ot");
 
     for i in 0..1_000_000 {
         net.save("old.ot");
 
         // gen training data
-        let gen = Generator::new(116);
+        let gen = Generator::new(32);
         let (observations, targets, _, _) =
             gen.generate(false, "old.ot".to_string(), "old.ot".to_string());
 
-        net.train(observations, targets, 50);
+        net.train(observations, targets, 10);
     }
 }
 

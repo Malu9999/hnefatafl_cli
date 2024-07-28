@@ -2,7 +2,7 @@ use std::path;
 
 use tch::{
     self,
-    nn::{self, LinearConfig, Module, OptimizerConfig, Sequential, VarStore},
+    nn::{self, LinearConfig, Module, Optimizer, OptimizerConfig, Sequential, VarStore},
     Device, Tensor,
 };
 
@@ -13,6 +13,7 @@ const OUTPUT_DIM: i64 = 1;
 pub struct Network {
     net: Sequential,
     vs: VarStore,
+    opt: Optimizer,
 }
 
 impl Network {
@@ -44,7 +45,9 @@ impl Network {
             ))
             .add_fn(|xs| xs.tanh());
 
-        Self { net, vs }
+        let opt = nn::Adam::default().build(&vs, 1e-4).unwrap();
+
+        Self { net, vs, opt }
     }
 
     pub fn load(&mut self, path: &str) {
@@ -59,20 +62,18 @@ impl Network {
         self.net.forward(&xs.flat_view())
     }
 
-    pub fn train(&self, data: Tensor, targets: Tensor, max_epochs: usize) {
-        let mut opt = nn::Adam::default().build(&self.vs, 1e-3).unwrap();
-
+    pub fn train(&mut self, data: Tensor, targets: Tensor, max_epochs: usize) {
         for epoch in 0..max_epochs {
             let logits = self.forward(&data);
 
             let loss = logits.mse_loss(&targets, tch::Reduction::Mean);
 
-            opt.zero_grad();
+            self.opt.zero_grad();
             loss.backward();
-            opt.step();
+            self.opt.step();
 
             if (epoch + 1) % 10 == 0 {
-                println!("Epoch: {:3}, Loss: {:?}", epoch, f32::try_from(loss));
+                println!("Epoch: {:3}, Loss: {:?}", epoch + 1, f32::try_from(loss));
             }
         }
 
