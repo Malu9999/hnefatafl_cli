@@ -6,7 +6,7 @@ use std::{
 extern crate chrono;
 
 use chrono::Local;
-const MAX_NUMBER_OF_MOVES: usize = 500;
+const MAX_NUMBER_OF_MOVES: usize = 1000;
 
 use crate::{
     agent::Bot,
@@ -121,7 +121,7 @@ impl Arena<'_> {
         let mut writer_replay = BufWriter::new(ouput_replays);
 
         let _ = writer_results
-            .write_all("Game_ID, Result, #turns, #avg_black_nodes, std_black_nodes, #avg_white_nodes, std_white_nodes\n".as_bytes());
+            .write_all("Game_ID, Result, num_turns, num_avg_black_nodes, std_black_nodes, num_avg_white_nodes, std_white_nodes\n".as_bytes());
 
         let mut num_moves: Vec<usize> = Vec::with_capacity(num_games);
         let mut black_wins: usize = 0;

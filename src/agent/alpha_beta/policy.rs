@@ -40,7 +40,7 @@ impl<T: Eval> AlphaBetaBot<T> {
                     crate::game::board::GameState::WinDefender => dist_from_root as i32,
                     crate::game::board::GameState::Draw => 0,
                 } as f64;
-                return factor * self.eval_fn.get_eval(&board) + addition;
+                return factor * (self.eval_fn.get_eval(&board) + addition);
             } else {
                 return factor * self.eval_fn.get_eval(&board);
             }
@@ -92,9 +92,9 @@ impl<T: Eval> BotInit for AlphaBetaBot<T> {
     type Ev = T;
     type Params = usize;
 
-    fn new(board: Option<&Board>, bot_params: Self::Params, eval_fn: Self::Ev) -> Self {
+    fn new(bot_params: Self::Params, eval_fn: Self::Ev) -> Self {
         AlphaBetaBot {
-            board: board.unwrap_or(&Board::new()).clone(),
+            board: Board::new(),
             eval_fn,
             max_depth: bot_params,
             best_move: None,
@@ -164,10 +164,10 @@ impl<T: Eval> Bot for AlphaBetaBot<T> {
     }
 
     fn num_nodes(&self) -> usize {
-        todo!()
+        0
     }
 
     fn get_name(&self) -> String {
-        todo!()
+        "AlphaBeta".to_string()
     }
 }

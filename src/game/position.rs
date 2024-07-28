@@ -10,6 +10,8 @@ pub struct ParsePositionError {
 #[derive(Debug)]
 enum PositionErrorKind {
     WrongDataAmount,
+    OutOfRange,
+    NonLetter,
     IntParsing(ParseIntError),
 }
 
@@ -27,21 +29,38 @@ impl Position {
                 kind: PositionErrorKind::WrongDataAmount,
             });
         }
-        let m = |el: &str| match el.parse::<usize>() {
+        let int_parse = |el: &str| match el.parse::<usize>() {
             Ok(res) => Ok(res),
             Err(err) => Err(ParsePositionError {
                 kind: PositionErrorKind::IntParsing(err),
             }),
         };
 
-        let i: usize = m(elements[0])?;
-        let j: usize = m(elements[1])?;
+        let letter_parse = |el: &str| match el.chars().next() {
+            Some(char) => Ok((char as u8 - b'A') as usize),
+            None => Err(ParsePositionError {
+                kind: PositionErrorKind::NonLetter,
+            }),
+        };
+
+        let i: usize = int_parse(elements[0])?;
+        let j: usize = letter_parse(elements[1])?;
+
+        if i >= BOARDSIZE || j >= BOARDSIZE {
+            return Err(ParsePositionError {
+                kind: PositionErrorKind::OutOfRange,
+            });
+        }
 
         Ok(Position::new_xy(i, j))
     }
 
     pub fn manhatten_dist(&self, other: &Position) -> usize {
         self.get_x().abs_diff(other.get_x()) + self.get_y().abs_diff(other.get_y())
+    }
+
+    pub fn get_pos_mask(&self) -> u128 {
+        1 << self.num
     }
 
     pub fn min_dist_to_corner(&self) -> usize {
@@ -167,10 +186,15 @@ impl std::fmt::Display for Position {
 impl std::fmt::Display for ParsePositionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            PositionErrorKind::WrongDataAmount => write!(f, "wrong amount of data provided"),
+            PositionErrorKind::WrongDataAmount => write!(f, "wrong amount of data provided."),
             PositionErrorKind::IntParsing(err) => {
-                write!(f, "Integers could not be parsed: {}", err)
+                write!(f, "Integers could not be parsed: {}.", err)
             }
+            PositionErrorKind::OutOfRange => write!(f, "value is not in range."),
+            PositionErrorKind::NonLetter => write!(
+                f,
+                "Second position index invalid. (Must be an UPPERCASE letter)"
+            ),
         }
     }
 }

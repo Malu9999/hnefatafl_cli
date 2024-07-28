@@ -65,11 +65,8 @@ impl Move {
         &self.end_pos
     }
 
-    pub fn get_mask(&self) -> FixedBitSet {
-        let mut mask = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
-        mask.insert(self.get_start_pos().get_num());
-        mask.insert(self.get_end_pos().get_num());
-        mask
+    pub fn get_mask(&self) -> u128 {
+        self.get_start_pos().get_pos_mask() | self.get_end_pos().get_pos_mask()
     }
     //returns positions on path of move
 }

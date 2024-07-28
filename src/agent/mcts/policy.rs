@@ -172,12 +172,10 @@ impl<T: Eval> BotInit for Mcts<T> {
     /// For this, an exporation_parameter must be provided which will be used in
     /// the UCB_1 formula for decision-making in the tree-policy of MCTS.
     /// Moreover, the color of the root node must be provided.
-    fn new(board: Option<&Board>, bot_params: Self::Params, eval_fn: T) -> Self {
+    fn new(bot_params: Self::Params, eval_fn: T) -> Self {
         Mcts {
             exploration_param: bot_params,
-            tree_root: Arc::new(RwLock::new(MctsTreenode::new_root(
-                board.unwrap_or(&Board::new()).clone(),
-            ))),
+            tree_root: Arc::new(RwLock::new(MctsTreenode::new_root(Board::new()))),
             num_nodes: 0,
             eval_fn,
         }
@@ -200,6 +198,6 @@ impl<T: Eval> Bot for Mcts<T> {
     }
 
     fn get_name(&self) -> String {
-        "MctsBot".to_owned()
+        "MCTS".to_owned()
     }
 }

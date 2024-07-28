@@ -11,7 +11,7 @@ pub trait BotInit {
     type Ev: Eval;
     type Params;
 
-    fn new(board: Option<&Board>, bot_params: Self::Params, eval_fn: Self::Ev) -> Self;
+    fn new(bot_params: Self::Params, eval_fn: Self::Ev) -> Self;
 }
 
 pub trait Bot {

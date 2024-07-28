@@ -3,6 +3,8 @@ use std::fmt::Display;
 use fixedbitset::FixedBitSet;
 use tch::{Device, Tensor};
 
+use crate::utils::action::Action;
+
 use super::{
     piece::{Piece, PieceColor},
     position::Position,
@@ -19,9 +21,9 @@ pub enum GameState {
 
 #[derive(Clone)]
 pub struct Board {
-    attackers: FixedBitSet,
-    defenders: FixedBitSet,
-    king: FixedBitSet,
+    attackers: u128,
+    defenders: u128,
+    king: u128,
     attacker_moves: Vec<Move>,
     defender_moves: Vec<Move>,
     player: PieceColor,
@@ -31,23 +33,9 @@ pub const BOARDSIZE: usize = 11;
 
 impl Board {
     pub fn new() -> Self {
-        let mut attackers = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
-        let mut defenders = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
-        let mut king = FixedBitSet::with_capacity(BOARDSIZE * BOARDSIZE);
-
-        let attackes_pos = vec![
-            3, 4, 5, 6, 7, 16, 33, 43, 44, 54, 55, 56, 64, 65, 66, 76, 77, 87, 104, 113, 114, 115,
-            116, 117,
-        ];
-        let defenders_pos = vec![38, 48, 49, 50, 58, 59, 61, 62, 70, 71, 72, 82];
-
-        for attacker in attackes_pos {
-            attackers.insert(attacker);
-        }
-        for defender in defenders_pos {
-            defenders.insert(defender);
-        }
-        king.insert(60);
+        let mut attackers: u128 = 0b00000000001111100000000100000000000000001000000000110000000001110000000111000000000110000000001000000000000000010000000011111000;
+        let mut defenders: u128 = 0b00000000000000000000000000000000000000000000010000000001110000000110110000000111000000000100000000000000000000000000000000000000;
+        let mut king: u128 = 0b00000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000;
 
         let mut board = Board {
             attackers,
@@ -90,41 +78,61 @@ impl Board {
     }
 
     fn get_piece(&self, pos: &Position) -> Option<Piece> {
-        let pos_num = pos.get_num() as usize;
-        if self.attackers.contains(pos_num) {
+        let pos_num: usize = pos.get_num();
+
+        if (self.attackers >> pos_num) & 1 == 1 {
             return Some(Piece::Pawn(PieceColor::Attacker));
-        } else if self.defenders.contains(pos_num) {
+        } else if (self.defenders >> pos_num) & 1 == 1 {
             return Some(Piece::Pawn(PieceColor::Defender));
-        } else if self.king.contains(pos_num) {
+        } else if (self.king >> pos_num) & 1 == 1 {
             return Some(Piece::King(PieceColor::Defender));
         }
         None
     }
 
     pub fn has_color_piece(&self, pos: &Position, color: &PieceColor) -> bool {
-        let pos_num = pos.get_num();
+        let pos_num: usize = pos.get_num();
+
         match color {
-            PieceColor::Attacker => self.attackers.contains(pos_num),
-            PieceColor::Defender => self.defenders.contains(pos_num) || self.king.contains(pos_num),
+            PieceColor::Attacker => (self.attackers >> pos_num) & 1 == 1,
+            PieceColor::Defender => {
+                (self.defenders >> pos_num) & 1 == 1 || (self.king >> pos_num) & 1 == 1
+            }
         }
     }
 
     pub fn get_king_pos(&self) -> Option<Position> {
-        Some(Position::new_n(self.king.maximum()?))
+        if self.king == 0 {
+            None
+        } else {
+            Some(Position::new_n(self.king.ilog2() as usize))
+        }
     }
 
     /// resturn one-hot encoding of the current state
     pub fn get_observation(&self) -> Tensor {
-        let attack_vec: Vec<f32> = (0..self.attackers.len())
-            .map(|i| if self.attackers.contains(i) { 1.0 } else { 0.0 })
+        let attack_vec: Vec<f32> = (0..BOARDSIZE * BOARDSIZE)
+            .map(|i| {
+                if self.attackers & 1 << i == 1 {
+                    1.0
+                } else {
+                    0.0
+                }
+            })
             .collect();
-        let defend_vec: Vec<f32> = (0..self.defenders.len())
-            .map(|i| if self.defenders.contains(i) { 1.0 } else { 0.0 })
+        let defend_vec: Vec<f32> = (0..BOARDSIZE * BOARDSIZE)
+            .map(|i| {
+                if self.defenders & 1 << i == 1 {
+                    1.0
+                } else {
+                    0.0
+                }
+            })
             .collect();
-        let king_vec: Vec<f32> = (0..self.king.len())
-            .map(|i| if self.king.contains(i) { 1.0 } else { 0.0 })
+        let king_vec: Vec<f32> = (0..BOARDSIZE * BOARDSIZE)
+            .map(|i| if self.king & 1 << i == 1 { 1.0 } else { 0.0 })
             .collect();
-        let player_vec: Vec<f32> = (0..self.defenders.len())
+        let player_vec: Vec<f32> = (0..BOARDSIZE * BOARDSIZE)
             .map(|_| match self.player {
                 PieceColor::Attacker => -1.0,
                 PieceColor::Defender => 1.0,
@@ -140,24 +148,22 @@ impl Board {
     }
 
     fn remove_color_piece(&mut self, pos: &Position, color: &PieceColor) {
-        let pos_num = pos.get_num();
+        let pos_m = pos.get_pos_mask();
         match color {
-            PieceColor::Attacker => self.attackers.remove(pos_num),
+            PieceColor::Attacker => self.attackers ^= pos_m,
             PieceColor::Defender => {
                 if self.get_king_pos().is_some_and(|p| p == *pos) {
-                    self.king.remove(pos_num);
+                    self.king ^= pos_m;
                 } else {
-                    self.defenders.remove(pos_num);
+                    self.defenders ^= pos_m;
                 }
             }
         }
     }
 
     pub fn pos_is_occupied(&self, pos: &Position) -> bool {
-        let pos_num = pos.get_num();
-        self.attackers.contains(pos_num)
-            || self.defenders.contains(pos_num)
-            || self.king.contains(pos_num)
+        self.has_color_piece(pos, &PieceColor::Attacker)
+            || self.has_color_piece(pos, &PieceColor::Defender)
     }
 
     pub fn update_possible_moves(&mut self) {
@@ -169,7 +175,7 @@ impl Board {
     pub fn possible_moves_color(&self, color: &PieceColor) -> Vec<Move> {
         let mut possible_moves = Vec::<Move>::with_capacity(120);
 
-        let current = match color {
+        let mut current = match color {
             PieceColor::Attacker => &self.attackers,
             PieceColor::Defender => {
                 if let Some(king_pos) = self.get_king_pos() {
@@ -177,11 +183,15 @@ impl Board {
                 }
                 &self.defenders
             }
-        };
+        }
+        .clone();
 
-        for idx in current.ones() {
-            let current_pos = Position::new_n(idx);
-            possible_moves.extend(self.possible_moves_from_pos(&current_pos).unwrap());
+        for idx in 0..BOARDSIZE * BOARDSIZE {
+            if current & 1 == 1 {
+                let current_pos = Position::new_n(idx);
+                possible_moves.extend(self.possible_moves_from_pos(&current_pos).unwrap());
+            }
+            current >>= 1;
         }
 
         possible_moves
@@ -258,7 +268,7 @@ impl Board {
         let enemy_color = color.get_opposite();
 
         // move the piece on the bit-board using XOR operator
-        let mask: FixedBitSet = mov.get_mask();
+        let mask = mov.get_mask();
         match color {
             PieceColor::Attacker => self.attackers ^= mask,
             PieceColor::Defender => {
@@ -329,6 +339,69 @@ impl Board {
         }
     }
 
+    //returns color of piece on position
+    fn get_color_of_pos(&self, pos: &Position) -> PieceColor {
+        match (
+            self.has_color_piece(pos, &PieceColor::Attacker),
+            self.has_color_piece(pos, &PieceColor::Defender),
+        ) {
+            (true, false) => PieceColor::Attacker,
+            (false, true) => PieceColor::Defender,
+            (false, false) => panic!("Position {} was empty.", pos),
+            (true, true) => panic!("Position {} is occupied by both players.", pos),
+        }
+    }
+
+    // Check if move is valid
+    pub fn is_valid_move(&self, mov: &Move, color: &PieceColor) -> bool {
+        match color {
+            PieceColor::Attacker => self.attacker_moves.contains(mov),
+            PieceColor::Defender => self.defender_moves.contains(mov),
+        }
+    }
+
+    pub fn perform_action(
+        &mut self,
+        action: &Action,
+        player_color: &PieceColor,
+    ) -> Result<(), &str> {
+        match action {
+            Action::MakeMove(mov) => {
+                if self.is_valid_move(mov, player_color) {
+                    if self.get_color_of_pos(mov.get_start_pos()) != *player_color {
+                        return Err("move for other color.");
+                    }
+                    let _ = self.make_move_captured_positions(mov);
+                } else {
+                    return Err("move invalid.");
+                }
+            }
+            Action::PossibleMoves(pos) => match self.possible_moves_from_pos(pos) {
+                Some(moves) => {
+                    println!(
+                        "possible moves for {}  at {}: ",
+                        self.get_piece(pos).unwrap(),
+                        pos
+                    );
+                    for mov in moves {
+                        print!("{}, ", mov);
+                    }
+                    println!();
+                }
+                None => println!("No piece at {}", &pos),
+            },
+            _ => (),
+        }
+        Ok(())
+    }
+
+    pub fn number_of_colored_pieces(&self, color: &PieceColor) -> u32 {
+        match color {
+            PieceColor::Attacker => self.attackers.count_ones(),
+            PieceColor::Defender => self.defenders.count_ones(),
+        }
+    }
+
     pub fn is_game_over(&self) -> bool {
         !matches!(self.who_won(), GameState::Undecided)
     }
@@ -337,11 +410,15 @@ impl Board {
         self.player.clone()
     }
 
-    pub fn get_attacker(&self) -> &FixedBitSet {
+    pub fn get_attacker(&self) -> &u128 {
         &self.attackers
     }
 
-    pub fn get_defender(&self) -> &FixedBitSet {
+    pub fn get_defender(&self) -> &u128 {
+        &self.defenders
+    }
+
+    pub fn get_king(&self) -> &u128 {
         &self.defenders
     }
 }

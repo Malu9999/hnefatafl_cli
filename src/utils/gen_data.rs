@@ -4,10 +4,12 @@ use tch::{Device, Tensor};
 
 use crate::{
     agent::{
+        alpha_beta::policy::AlphaBetaBot,
         mcts::{self, policy::Mcts},
+        random::policy::RandomBot,
         Bot, BotInit,
     },
-    eval::{neural_net::NeuralNet, EvalInit},
+    eval::{neural_net::NeuralNet, random_rollout::RandomRollout, EvalInit},
     game::{
         board::{self, Board, GameState},
         piece::PieceColor,
@@ -37,8 +39,11 @@ impl Generator {
         let mut handles = vec![];
 
         for i in 0..thread_count {
-            let attacker_mcts = Mcts::new(None, 1.4, NeuralNet::new(attacker_nn.clone()));
-            let defender_mcts = Mcts::new(None, 1.4, NeuralNet::new(defender_nn.clone()));
+            let attacker_mcts = Box::new(AlphaBetaBot::new(3, NeuralNet::new(attacker_nn.clone())));
+            let defender_mcts = Box::new(AlphaBetaBot::new(3, NeuralNet::new(defender_nn.clone())));
+
+            //let attacker_mcts = Box::new(RandomBot::new(1, RandomRollout::new(1)));
+            //let defender_mcts = Box::new(RandomBot::new(1, RandomRollout::new(1)));
             let num_games = self.num_games / thread_count;
             let fix = fixed;
 
@@ -80,8 +85,8 @@ impl Generator {
 fn rollout_with_observations(
     num_rollouts: usize,
     fixed: bool,
-    mut mcts_defender: Mcts<NeuralNet>,
-    mut mcts_attacker: Mcts<NeuralNet>,
+    mut mcts_defender: Box<dyn Bot>,
+    mut mcts_attacker: Box<dyn Bot>,
 ) -> (Vec<Tensor>, Vec<f32>, usize, usize) {
     let mut observations = Vec::<Tensor>::new();
     let mut targets: Vec<f32> = Vec::new();

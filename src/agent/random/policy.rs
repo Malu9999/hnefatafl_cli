@@ -12,7 +12,7 @@ impl<T: Eval> BotInit for RandomBot<T> {
     type Ev = T;
     type Params = usize;
 
-    fn new(board: Option<&Board>, bot_params: Self::Params, eval_fn: Self::Ev) -> Self {
+    fn new(bot_params: Self::Params, eval_fn: Self::Ev) -> Self {
         RandomBot { eval: eval_fn }
     }
 }
@@ -27,10 +27,10 @@ impl<T: Eval> Bot for RandomBot<T> {
     }
 
     fn num_nodes(&self) -> usize {
-        todo!()
+        0
     }
 
     fn get_name(&self) -> String {
-        todo!()
+        "Random".to_string()
     }
 }

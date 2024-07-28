@@ -1,0 +1,3 @@
+Game_ID, Result, num_turns, num_avg_black_nodes, std_black_nodes, num_avg_white_nodes, std_white_nodes
+0, 2, 100, 0.00, 0.00, 1024.08, 446.36
+1, 1, 65, 0.00, 0.00, 782.75, 356.54
