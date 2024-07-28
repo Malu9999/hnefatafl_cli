@@ -1,23 +1,23 @@
-use core::num;
-
-use rand::{random, rngs::ThreadRng, Rng};
+use rand::{rngs::ThreadRng, Rng};
 
 use super::{
-    board::{self, Board, BOARDSIZE},
+    board::{Board, BOARDSIZE},
     position::Position,
-    r#move::{self, Move},
+    r#move::Move,
 };
 
 const COLUMN: u128 =    0b00000000000000000100000000001000000000010000000000100000000001000000000010000000000100000000001000000000010000000000100000000001;
 const ROW: u128 =       0b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111111;
 const THRONE: u128 =    0b00000001000000000100000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000010000000001;
 
+#[allow(unused)]
 pub struct MoveGen {
     magics: Vec<u128>,
     shifts: Vec<usize>,
     lookup: Vec<Vec<u128>>,
 }
 
+#[allow(unused)]
 impl MoveGen {
     pub fn new() -> MoveGen {
         MoveGen {
@@ -30,7 +30,7 @@ impl MoveGen {
     pub fn slider_mask(&self, pos: &Position) -> u128 {
         let (pos_x, pos_y) = (pos.get_x(), pos.get_y());
 
-        (ROW << pos_x * BOARDSIZE) ^ (COLUMN << pos_y)
+        (ROW << (pos_x * BOARDSIZE)) ^ (COLUMN << pos_y)
     }
 
     pub fn generate_moves(&self, pos: Position, board: &Board) -> Vec<Move> {
@@ -104,7 +104,7 @@ impl MoveGen {
 
     pub fn gen_occupied(&self, index: usize, num_fields: u32, mask: u128) -> u128 {
         let mut occupancy: u128 = 0;
-        let mut mask_copy = mask.clone();
+        let mut mask_copy = mask;
 
         for idx in 0..num_fields {
             let b = (mask_copy ^ (mask_copy - 1)) & mask_copy;
@@ -168,8 +168,6 @@ impl MoveGen {
                 println!("{}", it);
             }
 
-            fail = false;
-
             for i in 0..1 << bits {
                 flag[i] = false;
                 used[i] = 0;
@@ -190,11 +188,12 @@ impl MoveGen {
             if !fail {
                 return magic;
             }
+            fail = false;
         }
 
         println!("failed");
 
-        return 0;
+        0
     }
 }
 

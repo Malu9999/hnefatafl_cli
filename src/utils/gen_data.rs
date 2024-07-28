@@ -3,15 +3,10 @@ use std::{thread, vec};
 use tch::{Device, Tensor};
 
 use crate::{
-    agent::{
-        alpha_beta::policy::AlphaBetaBot,
-        mcts::{self, policy::Mcts},
-        random::policy::RandomBot,
-        Bot, BotInit,
-    },
+    agent::{alpha_beta::policy::AlphaBetaBot, random::policy::RandomBot, Bot, BotInit},
     eval::{neural_net::NeuralNet, random_rollout::RandomRollout, EvalInit},
     game::{
-        board::{self, Board, GameState},
+        board::{Board, GameState},
         piece::PieceColor,
     },
 };
@@ -38,9 +33,11 @@ impl Generator {
 
         let mut handles = vec![];
 
-        for i in 0..thread_count {
-            //let attacker_mcts = Box::new(AlphaBetaBot::new(3, NeuralNet::new(attacker_nn.clone())));
-            //let defender_mcts = Box::new(AlphaBetaBot::new(3, NeuralNet::new(defender_nn.clone())));
+        for _ in 0..thread_count {
+            let _attacker_mcts =
+                Box::new(AlphaBetaBot::new(3, NeuralNet::new(attacker_nn.clone())));
+            let _defender_mcts =
+                Box::new(AlphaBetaBot::new(3, NeuralNet::new(defender_nn.clone())));
 
             let attacker_mcts = Box::new(RandomBot::new(1, RandomRollout::new(1)));
             let defender_mcts = Box::new(RandomBot::new(1, RandomRollout::new(1)));

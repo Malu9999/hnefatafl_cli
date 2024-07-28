@@ -1,8 +1,6 @@
-use std::path;
-
 use tch::{
     self,
-    nn::{self, LinearConfig, Module, Optimizer, OptimizerConfig, Sequential, VarStore},
+    nn::{self, Module, Optimizer, OptimizerConfig, Sequential, VarStore},
     Device, Tensor,
 };
 
@@ -51,7 +49,7 @@ impl Network {
     }
 
     pub fn load(&mut self, path: &str) {
-        self.vs.load(path);
+        let _ = self.vs.load(path);
     }
 
     pub fn save(&self, path: &str) {

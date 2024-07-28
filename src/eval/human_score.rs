@@ -101,11 +101,10 @@ impl Eval for HumanScore {
             + white_penalty
     }
 
-    fn update(&mut self, board: Board) {
-        todo!()
-    }
+    fn update(&mut self, _board: Board) {}
 }
 
+#[allow(unused)]
 fn fixedbitset_from_bitstring(bitstring: &str) -> FixedBitSet {
     let mut bitset = FixedBitSet::with_capacity(bitstring.len());
     for (i, bit) in bitstring.chars().rev().enumerate() {

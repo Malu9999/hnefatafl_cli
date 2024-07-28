@@ -1,11 +1,6 @@
 use std::str::SplitWhitespace;
 
-use fixedbitset::FixedBitSet;
-
-use super::{
-    board::BOARDSIZE,
-    position::{ParsePositionError, Position},
-};
+use super::position::{ParsePositionError, Position};
 
 #[derive(Debug)]
 pub struct ParseMoveError {

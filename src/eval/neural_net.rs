@@ -1,16 +1,6 @@
-use tch::{
-    nn::{Sequential, VarStore},
-    Device,
-};
+use tch::Device;
 
-use crate::{
-    game::{
-        board::{Board, GameState},
-        piece::PieceColor,
-        r#move::Move,
-    },
-    synthesis::network::Network,
-};
+use crate::{game::board::Board, synthesis::network::Network};
 
 use super::{Eval, EvalInit};
 
@@ -43,7 +33,5 @@ impl Eval for NeuralNet {
         .unwrap()
     }
 
-    fn update(&mut self, board: Board) {
-        ()
-    }
+    fn update(&mut self, _board: Board) {}
 }

@@ -60,7 +60,7 @@ impl<T: Eval> AlphaBetaBot<T> {
             }
 
             let mut child = board.clone();
-            child.make_move_captured_positions(&mov);
+            child.make_move_captured_positions(mov);
 
             let eval = -self.alpha_beta(
                 child,
@@ -104,7 +104,7 @@ impl<T: Eval> BotInit for AlphaBetaBot<T> {
 
 impl<T: Eval> Bot for AlphaBetaBot<T> {
     fn get_next_move(&mut self, board: &Board, time: u128) -> Option<Move> {
-        let start_time = time::Instant::now();
+        let start_time: time::Instant = time::Instant::now();
 
         self.reset(board);
 
@@ -124,37 +124,10 @@ impl<T: Eval> Bot for AlphaBetaBot<T> {
                 self.best_move.clone(),
             );
 
-            /*if start_time.elapsed().as_millis() > time {
+            if start_time.elapsed().as_millis() > time {
                 break;
-            }*/
-        }
-
-        /*for mov in legal_moves {
-            let mut current_board = board.clone();
-
-            current_board.make_move_captured_positions(&mov);
-            let val = self.alpha_beta(
-                current_board,
-                self.max_depth,
-                f64::NEG_INFINITY,
-                f64::INFINITY,
-                !black_gaming,
-                0,
-            );
-
-            println!("{}, {}", mov, val);
-
-            if black_gaming {
-                if val > best_val {
-                    best_val = val;
-                    best_move = Some(mov);
-                }
-            } else if val < best_val {
-                println!("{}", mov);
-                best_val = val;
-                best_move = Some(mov);
             }
-        }*/
+        }
 
         self.best_move.clone()
     }

@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
-use fixedbitset::FixedBitSet;
-use tch::{Device, Tensor};
+use tch::Tensor;
 
 use crate::utils::action::Action;
 
@@ -33,9 +32,9 @@ pub const BOARDSIZE: usize = 11;
 
 impl Board {
     pub fn new() -> Self {
-        let mut attackers: u128 = 0b00000000001111100000000100000000000000001000000000110000000001110000000111000000000110000000001000000000000000010000000011111000;
-        let mut defenders: u128 = 0b00000000000000000000000000000000000000000000010000000001110000000110110000000111000000000100000000000000000000000000000000000000;
-        let mut king: u128 = 0b00000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000;
+        let attackers: u128 = 0b00000000001111100000000100000000000000001000000000110000000001110000000111000000000110000000001000000000000000010000000011111000;
+        let defenders: u128 = 0b00000000000000000000000000000000000000000000010000000001110000000110110000000111000000000100000000000000000000000000000000000000;
+        let king: u128 = 0b00000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000;
 
         let mut board = Board {
             attackers,
@@ -175,7 +174,7 @@ impl Board {
     pub fn possible_moves_color(&self, color: &PieceColor) -> Vec<Move> {
         let mut possible_moves = Vec::<Move>::with_capacity(120);
 
-        let mut current = match color {
+        let mut current = *match color {
             PieceColor::Attacker => &self.attackers,
             PieceColor::Defender => {
                 if let Some(king_pos) = self.get_king_pos() {
@@ -183,8 +182,7 @@ impl Board {
                 }
                 &self.defenders
             }
-        }
-        .clone();
+        };
 
         for idx in 0..BOARDSIZE * BOARDSIZE {
             if current & 1 == 1 {

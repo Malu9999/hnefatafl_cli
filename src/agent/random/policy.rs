@@ -5,15 +5,15 @@ use crate::{
 };
 
 pub struct RandomBot<T: Eval> {
-    eval: T,
+    _eval: T,
 }
 
 impl<T: Eval> BotInit for RandomBot<T> {
     type Ev = T;
     type Params = usize;
 
-    fn new(bot_params: Self::Params, eval_fn: Self::Ev) -> Self {
-        RandomBot { eval: eval_fn }
+    fn new(_bot_params: Self::Params, eval_fn: Self::Ev) -> Self {
+        RandomBot { _eval: eval_fn }
     }
 }
 
@@ -22,9 +22,7 @@ impl<T: Eval> Bot for RandomBot<T> {
         board.get_random_move()
     }
 
-    fn reset(&mut self, board: &Board) {
-        ()
-    }
+    fn reset(&mut self, _board: &Board) {}
 
     fn num_nodes(&self) -> usize {
         0

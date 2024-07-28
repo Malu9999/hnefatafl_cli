@@ -1,27 +1,18 @@
-use std::cell::RefCell;
-use std::env::current_exe;
-use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 use std::time;
 
 use crate::agent::{Bot, BotInit};
-use crate::eval::{self, Eval};
+use crate::eval::Eval;
 use crate::game::piece::PieceColor;
 use crate::game::{board::Board, r#move::Move};
 
 use super::node::{MctsTreenode, TreenodeRef};
-
-pub const EPIC_VICTORY_REWARD: f64 = 1000.0;
 
 pub struct Mcts<T: Eval> {
     exploration_param: f64,
     tree_root: TreenodeRef,
     num_nodes: usize,
     eval_fn: T,
-}
-
-pub struct MctsParams {
-    exploration_param: f64,
 }
 
 impl<T: Eval> Mcts<T> {
@@ -60,6 +51,7 @@ impl<T: Eval> Mcts<T> {
         incumbent_mov
     }
 
+    #[allow(unused)]
     pub fn print_root(&self) {
         println!("{}", self.tree_root.read().unwrap());
     }

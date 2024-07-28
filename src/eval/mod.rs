@@ -1,4 +1,4 @@
-use crate::game::{board::Board, r#move::Move};
+use crate::game::board::Board;
 
 pub mod human_score;
 pub mod neural_net;
@@ -14,5 +14,6 @@ pub trait EvalInit {
 pub trait Eval {
     fn get_eval(&self, board: &Board) -> f64;
 
+    #[allow(unused)]
     fn update(&mut self, board: Board);
 }

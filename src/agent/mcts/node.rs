@@ -1,9 +1,7 @@
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
-use std::cell::RefCell;
 use std::fmt::Display;
-use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
 use crate::game::board::Board;

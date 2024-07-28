@@ -3,28 +3,29 @@ use std::thread;
 use crate::game::{
     board::{Board, GameState},
     piece::PieceColor,
-    r#move::Move,
 };
 
 use super::{Eval, EvalInit};
 
-pub struct RandomRolloutPar;
+pub struct RandomRolloutPar {
+    num_threads: usize,
+}
 
 impl EvalInit for RandomRolloutPar {
     type Param = usize;
 
     fn new(param: Self::Param) -> Self {
-        RandomRolloutPar
+        RandomRolloutPar { num_threads: param }
     }
 }
 
 impl Eval for RandomRolloutPar {
     fn get_eval(&self, board: &Board) -> f64 {
-        let num_threads = thread::available_parallelism().unwrap().get() * 4;
+        let num_threads = self.num_threads;
 
         let mut handles = Vec::new();
 
-        for i in 0..num_threads {
+        for _ in 0..num_threads {
             let mut rollout_board = board.clone();
             handles.push(thread::spawn(move || {
                 while !rollout_board.is_game_over() {
@@ -60,7 +61,5 @@ impl Eval for RandomRolloutPar {
         // perform actions as long as the game is not over
     }
 
-    fn update(&mut self, board: Board) {
-        ()
-    }
+    fn update(&mut self, _board: Board) {}
 }

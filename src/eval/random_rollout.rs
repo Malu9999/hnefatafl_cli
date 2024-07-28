@@ -1,7 +1,6 @@
 use crate::game::{
     board::{Board, GameState},
     piece::PieceColor,
-    r#move::Move,
 };
 
 use super::{Eval, EvalInit};
@@ -11,7 +10,7 @@ pub struct RandomRollout;
 impl EvalInit for RandomRollout {
     type Param = usize;
 
-    fn new(param: Self::Param) -> Self {
+    fn new(_param: Self::Param) -> Self {
         RandomRollout
     }
 }
@@ -42,7 +41,5 @@ impl Eval for RandomRollout {
         }
     }
 
-    fn update(&mut self, board: Board) {
-        ()
-    }
+    fn update(&mut self, _board: Board) {}
 }

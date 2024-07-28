@@ -6,14 +6,11 @@ mod synthesis;
 mod utils;
 
 use core::time;
-use std::str::FromStr;
-use std::thread::{self, JoinHandle};
-use std::usize;
+use std::thread::{self};
 
 use agent::{alpha_beta::policy::AlphaBetaBot, mcts::policy::Mcts, random::policy::RandomBot};
 use agent::{Bot, BotInit};
 use eval::human_score::{HumanScore, HumanScoreParam};
-use eval::neural_net::NeuralNet;
 use eval::random_rollout::RandomRollout;
 use eval::EvalInit;
 use game::board::BOARDSIZE;
@@ -25,15 +22,16 @@ use game::{
 };
 use gym::fight::Arena;
 use synthesis::network::Network;
-use tch::{nn::VarStore, Device, Tensor};
+use tch::Device;
 use utils::action::Action;
-use utils::gen_data::{self, Generator};
+use utils::gen_data::Generator;
 
 fn main() {
     println!("Welcome to Hnefatafl.\nPlease choose one of the following options:");
     println!("1) Bot vs. Bot");
     println!("2) Human vs. Bot");
     println!("3) Training");
+    println!("4) Watch random game with NN evaluations");
     let mode = read_usize_in_range(1, 4);
 
     if mode == 1 {
@@ -78,68 +76,6 @@ fn main() {
     } else {
         println!("You didn't choose a valid play mode.");
     }
-
-    //move_gen();
-    /*let mut board = Board::new();
-
-    let mut turn = PieceColor::Attacker;
-
-    //let mut vs = VarStore::new(Device::cuda_if_available());
-
-    let mut net = Network::new();
-
-    net.load("model.ot");
-    //let (observations, targets) = Generator::new(100).generate();
-
-    println!("done");
-
-    let eval = HumanScore::new(HumanScoreParam {
-        w_ring_1: 0.0,
-        w_ring_2: 0.0,
-        w_ring_3: 3.0,
-        w_ring_4: 0.0,
-        w_corner: 10.0,
-        w_edge: -1.0,
-        w_king_dst: -1.0,
-    });
-
-    let mut alphabeta = AlphaBetaBot::new(Some(&board), 3, eval);
-
-    let mut mcts = Mcts::new(Some(&board), 2.0, RandomRollout::new(1));
-    //let mut random = RandomBot::new(Some(&board), 2, RandomRollout::new(1));
-    //let mut mcts = Mcts::new(Some(&board), 2.0, RandomRollout::new(1));
-
-    //net.train(observations, targets, 1000, &vs);
-
-    //let _ = vs.save("test.net");
-
-    while !board.is_game_over() {
-        //mcts.reset(&board);
-
-        let mov = match turn {
-            PieceColor::Attacker => alphabeta.get_next_move(&board, 100).unwrap(),
-            PieceColor::Defender => alphabeta.get_next_move(&board, 1000).unwrap(),
-        };
-
-        //let mov = board.get_random_move().unwrap();
-        println!("{}", mov);
-        //mcts.print_root();
-
-        let captured = board.make_move_captured_positions(&mov);
-
-        let obs = board
-            .get_observation()
-            .unsqueeze(0)
-            .to_device(Device::cuda_if_available());
-        println!("{:?}", f32::try_from(net.forward(&obs)));
-
-        //println!("{}", board.get_king_pos().unwrap().min_dist_to_corner());
-
-        turn.flip();
-        println!("{}", board);
-
-        thread::sleep(time::Duration::from_millis(500));
-    }*/
 }
 
 fn choose_bot(color: PieceColor) -> (u128, Box<dyn Bot>) {
@@ -272,6 +208,7 @@ fn read_usize_in_range(min: usize, max: usize) -> usize {
     result
 }
 
+#[allow(unused)]
 fn move_gen() {
     let move_gen = MoveGen::new();
     for sq in 0..(BOARDSIZE * BOARDSIZE) {
@@ -284,22 +221,23 @@ fn move_gen() {
 }
 
 fn watch_game_with_eval() {
+    /*let eval = HumanScore::new(HumanScoreParam {
+        w_ring_1: 0.0,
+        w_ring_2: 0.0,
+        w_ring_3: 3.0,
+        w_ring_4: 0.0,
+        w_corner: 10.0,
+        w_edge: -1.0,
+        w_king_dst: -1.0,
+    });*/
     //let mut alphabeta = AlphaBetaBot::new(3, eval);
-
-    let mut mcts = Mcts::new(2.0, RandomRollout::new(1));
+    //let mut mcts = Mcts::new(2.0, RandomRollout::new(1));
     let mut random = RandomBot::new(2, RandomRollout::new(1));
-    //let mut mcts = Mcts::new(Some(&board), 2.0, RandomRollout::new(1));
-
-    //net.train(observations, targets, 1000, &vs);
-
-    //let _ = vs.save("test.net");
 
     let mut turn = PieceColor::Attacker;
-
     let mut board = Board::new();
 
     let mut net = Network::new();
-
     net.load("old.ot");
 
     while !board.is_game_over() {
@@ -310,19 +248,15 @@ fn watch_game_with_eval() {
             PieceColor::Defender => random.get_next_move(&board, 1000).unwrap(),
         };
 
-        //let mov = board.get_random_move().unwrap();
         println!("{}", mov);
-        //mcts.print_root();
 
-        let captured = board.make_move_captured_positions(&mov);
+        let _captured = board.make_move_captured_positions(&mov);
 
         let obs = board
             .get_observation()
             .unsqueeze(0)
             .to_device(Device::cuda_if_available());
         println!("{:?}", f32::try_from(net.forward(&obs)));
-
-        //println!("{}", board.get_king_pos().unwrap().min_dist_to_corner());
 
         turn.flip();
         println!("{}", board);
@@ -336,7 +270,7 @@ fn simple_taining_loop() {
 
     net.load("checkpoint.ot");
 
-    for i in 0..1_000_000 {
+    for _ in 0..1_000_000 {
         net.save("old.ot");
 
         // gen training data
@@ -348,6 +282,7 @@ fn simple_taining_loop() {
     }
 }
 
+#[allow(unused)]
 fn alpha_zero_loop() {
     let mut net = Network::new();
 
