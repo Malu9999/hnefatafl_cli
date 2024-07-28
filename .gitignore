@@ -1,4 +1,6 @@
 /target
+/results
+/replays
 
 perf.data
 perf.data.old
