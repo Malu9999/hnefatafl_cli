@@ -39,11 +39,11 @@ impl Generator {
         let mut handles = vec![];
 
         for i in 0..thread_count {
-            let attacker_mcts = Box::new(AlphaBetaBot::new(3, NeuralNet::new(attacker_nn.clone())));
-            let defender_mcts = Box::new(AlphaBetaBot::new(3, NeuralNet::new(defender_nn.clone())));
+            //let attacker_mcts = Box::new(AlphaBetaBot::new(3, NeuralNet::new(attacker_nn.clone())));
+            //let defender_mcts = Box::new(AlphaBetaBot::new(3, NeuralNet::new(defender_nn.clone())));
 
-            //let attacker_mcts = Box::new(RandomBot::new(1, RandomRollout::new(1)));
-            //let defender_mcts = Box::new(RandomBot::new(1, RandomRollout::new(1)));
+            let attacker_mcts = Box::new(RandomBot::new(1, RandomRollout::new(1)));
+            let defender_mcts = Box::new(RandomBot::new(1, RandomRollout::new(1)));
             let num_games = self.num_games / thread_count;
             let fix = fixed;
 
@@ -127,7 +127,7 @@ fn rollout_with_observations(
                     observations.extend(current_obs);
                     targets.extend(&vec![1.0; num_moves]);
                 }
-                println!("new_black");
+                //println!("new_black");
                 black_wins += 1;
             }
             GameState::WinDefender => {
@@ -135,7 +135,7 @@ fn rollout_with_observations(
                     observations.extend(current_obs);
                     targets.extend(&vec![-1.0; num_moves]);
                 }
-                println!("new_white");
+                //println!("new_white");
                 white_wins += 1;
             }
             _ => (),

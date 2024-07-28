@@ -71,7 +71,7 @@ impl Network {
             loss.backward();
             opt.step();
 
-            if epoch % 10 == 0 {
+            if (epoch + 1) % 10 == 0 {
                 println!("Epoch: {:3}, Loss: {:?}", epoch, f32::try_from(loss));
             }
         }

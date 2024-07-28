@@ -72,7 +72,7 @@ fn main() {
 
         game_loop(my_color, bot_time_limit, &mut bot);
     } else if mode == 3 {
-        alpha_zero_loop();
+        simple_taining_loop();
     } else {
         println!("You didn't choose a valid play mode.");
     }
@@ -278,6 +278,21 @@ fn move_gen() {
             sq,
             move_gen.gen_magics(&Position::new_n(sq), 22)
         )
+    }
+}
+
+fn simple_taining_loop() {
+    let net = Network::new();
+
+    for i in 0..100 {
+        net.save("old.ot");
+
+        // gen training data
+        let gen = Generator::new(32);
+        let (observations, targets, _, _) =
+            gen.generate(false, "old.ot".to_string(), "old.ot".to_string());
+
+        net.train(observations, targets, 10);
     }
 }
 
