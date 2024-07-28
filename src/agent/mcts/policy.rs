@@ -6,11 +6,11 @@ use crate::eval::Eval;
 use crate::game::piece::PieceColor;
 use crate::game::{board::Board, r#move::Move};
 
-use super::node::{MctsTreenode, TreenodeRef};
+use super::node::{MctsTreenode, TreenodeRefWeak};
 
 pub struct Mcts<T: Eval> {
     exploration_param: f64,
-    tree_root: TreenodeRef,
+    tree_root: Arc<RwLock<MctsTreenode>>,
     num_nodes: usize,
     eval_fn: T,
 }
@@ -31,19 +31,16 @@ impl<T: Eval> Mcts<T> {
         let mut max_eval = f64::MIN;
         let mut incumbent_mov: Option<Move> = None;
 
-        let root_borrowed = self.tree_root.read().unwrap();
-        let children: &Vec<TreenodeRef> = root_borrowed.get_children();
+        let root_borrowed = &self.tree_root.read().unwrap();
 
-        for child in children.iter() {
-            let child_borrowed = child.read().unwrap();
-
-            let child_q_val = child_borrowed.get_q_val();
-            let child_n_val = child_borrowed.get_n_val() as f64;
+        for child in root_borrowed.get_children().iter() {
+            let child_q_val = child.read().unwrap().get_q_val();
+            let child_n_val = child.read().unwrap().get_n_val() as f64;
 
             let eval = child_q_val / child_n_val;
 
             if eval > max_eval {
-                incumbent_mov = Some(child_borrowed.get_mov().as_ref().unwrap().clone());
+                incumbent_mov = Some(child.read().unwrap().get_mov().as_ref().unwrap().clone());
                 max_eval = eval;
             }
         }
@@ -69,11 +66,12 @@ impl<T: Eval> Mcts<T> {
                 .tree_policy(self.exploration_param)
                 .expect("Tree policy failed.");
 
-            let term = node_to_expand.read().unwrap().is_terminal();
+            let rc_pointer_node = node_to_expand.upgrade().unwrap();
+            let term = rc_pointer_node.read().unwrap().is_terminal();
 
             // if the node is terminal, we find out who won and propagate backwards.
             if term {
-                let mut node_to_expand_borrowed = node_to_expand.write().unwrap();
+                let mut node_to_expand_borrowed = rc_pointer_node.write().unwrap();
 
                 let eval = self.eval_fn.get_eval(node_to_expand_borrowed.get_board());
 
@@ -86,7 +84,7 @@ impl<T: Eval> Mcts<T> {
             }
 
             // choose the next move todo
-            let next_move = node_to_expand
+            let next_move = rc_pointer_node
                 .write()
                 .unwrap()
                 .choose_move()
@@ -107,7 +105,7 @@ impl<T: Eval> Mcts<T> {
             new_child.back_propagation(outcome);
 
             // add child to the parent node
-            node_to_expand.write().unwrap().add_child(new_child);
+            rc_pointer_node.write().unwrap().add_child(new_child);
 
             self.num_nodes += 1;
         }
@@ -115,7 +113,7 @@ impl<T: Eval> Mcts<T> {
 
     /// performs the tree policy on the MCTS tree yielding the next node to expand.
     /// If all nodes have been expanded, it will return None.
-    fn tree_policy(&self, expl_param: f64) -> Option<TreenodeRef> {
+    fn tree_policy(&self, expl_param: f64) -> Option<TreenodeRefWeak> {
         let mut current_node = Arc::clone(&self.tree_root);
 
         loop {
@@ -125,7 +123,7 @@ impl<T: Eval> Mcts<T> {
 
             // if the current node is terminal or there are still some moves not expanded -> return
             if i < current_node.read().unwrap().num_movs() || term {
-                return Some(current_node);
+                return Some(Arc::downgrade(&current_node));
             }
 
             // get the next child node by using ucb
@@ -148,7 +146,7 @@ impl<T: Eval> Mcts<T> {
             match next_child {
                 Some(child) => {
                     counter += 1;
-                    current = Arc::clone(&child);
+                    current = child;
                 }
                 None => return counter,
             }

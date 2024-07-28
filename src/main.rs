@@ -11,6 +11,7 @@ use std::thread::{self};
 use agent::{alpha_beta::policy::AlphaBetaBot, mcts::policy::Mcts, random::policy::RandomBot};
 use agent::{Bot, BotInit};
 use eval::human_score::{HumanScore, HumanScoreParam};
+use eval::neural_net::NeuralNet;
 use eval::random_rollout::RandomRollout;
 use eval::EvalInit;
 use game::board::BOARDSIZE;
@@ -100,7 +101,11 @@ fn choose_bot(color: PieceColor) -> (u128, Box<dyn Bot>) {
     let black_bot_choice = read_usize_in_range(1, 3);
 
     let bot: Box<dyn Bot> = if black_bot_choice == 1 {
-        Box::new(RandomBot::new(2, RandomRollout::new(1)))
+        //Box::new(RandomBot::new(2, RandomRollout::new(1)))
+        Box::new(AlphaBetaBot::new(
+            3,
+            NeuralNet::new("checkpoint.ot".to_string()),
+        ))
     } else if black_bot_choice == 2 {
         Box::new(Mcts::new(1.4, RandomRollout::new(1)))
     } else {
@@ -232,6 +237,7 @@ fn watch_game_with_eval() {
     });*/
     //let mut alphabeta = AlphaBetaBot::new(3, eval);
     //let mut mcts = Mcts::new(2.0, RandomRollout::new(1));
+
     let mut random = RandomBot::new(2, RandomRollout::new(1));
 
     let mut turn = PieceColor::Attacker;

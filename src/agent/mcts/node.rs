@@ -2,7 +2,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 
 use std::fmt::Display;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 use crate::game::board::Board;
 use crate::game::piece::Piece;
@@ -17,11 +17,12 @@ pub struct MctsTreenode {
     unexplored_moves_index: usize,
     q_val: f64,
     n_val: usize,
-    children: Vec<TreenodeRef>,
-    parent: Option<TreenodeRef>,
+    children: Vec<TreenodeRefStrong>,
+    parent: Option<TreenodeRefWeak>,
 }
 
-pub type TreenodeRef = Arc<RwLock<MctsTreenode>>;
+pub type TreenodeRefWeak = Weak<RwLock<MctsTreenode>>;
+pub type TreenodeRefStrong = Arc<RwLock<MctsTreenode>>;
 
 impl MctsTreenode {
     pub fn new_root(state: Board) -> MctsTreenode {
@@ -39,18 +40,16 @@ impl MctsTreenode {
         }
     }
 
-    pub fn new_child_node(parent: &TreenodeRef, mov: Move) -> MctsTreenode {
-        let parent_borrowed = parent.read().unwrap();
+    pub fn new_child_node(parent: &TreenodeRefWeak, mov: Move) -> MctsTreenode {
+        let parent_borrowed = parent.upgrade().unwrap();
 
-        let mut child_state = parent_borrowed.state.clone();
+        let mut child_state = parent_borrowed.read().unwrap().state.clone();
 
         // make move on child state and get captured positions
         child_state.make_move_captured_positions(&mov);
 
         let mut unexplored_moves = child_state.get_legal_moves();
         unexplored_moves.shuffle(&mut thread_rng());
-
-        // check_move(&child_state, &unexplored_moves, &child_color);
 
         MctsTreenode {
             terminal: child_state.is_game_over(),
@@ -61,30 +60,38 @@ impl MctsTreenode {
             q_val: 0.0,
             n_val: 0,
             children: vec![],
-            parent: Some(Arc::clone(parent)),
+            parent: Some(Weak::clone(parent)),
         }
     }
 
     /// Returns a reference to the next best child node by the UCB1 formula
-    pub fn get_next_child_ucb(&self, expl_param: f64) -> Option<TreenodeRef> {
+    pub fn get_next_child_ucb(&self, expl_param: f64) -> Option<TreenodeRefStrong> {
         let mut maxucbval = f64::NEG_INFINITY;
-        let mut maxchild: Option<&TreenodeRef> = None;
+        let mut maxchild: Option<TreenodeRefStrong> = None;
 
         for child in &self.children {
             let child_ucb_val = child.read().unwrap().compute_ucb_val(expl_param);
             if child_ucb_val > maxucbval {
                 maxucbval = child_ucb_val;
-                maxchild = Some(child);
+                maxchild = Some(Arc::clone(child));
             }
         }
 
-        Some(Arc::clone(maxchild?))
+        Some(Arc::clone(&maxchild?))
     }
 
     /// Computes the UCB1 value of itself.
     fn compute_ucb_val(&self, expl_param: f64) -> f64 {
         let nvf = self.n_val as f64;
-        let nvf_parent = self.parent.as_ref().unwrap().read().unwrap().n_val as f64;
+        let nvf_parent = self
+            .parent
+            .as_ref()
+            .unwrap()
+            .upgrade()
+            .unwrap()
+            .read()
+            .unwrap()
+            .n_val as f64;
 
         self.q_val / nvf + expl_param * (2.0 * nvf_parent.ln() / nvf).sqrt()
     }
@@ -96,7 +103,12 @@ impl MctsTreenode {
         self.q_val += outcome;
 
         if let Some(parent) = &self.parent {
-            parent.write().unwrap().back_propagation(-1.0 * outcome);
+            parent
+                .upgrade()
+                .unwrap()
+                .write()
+                .unwrap()
+                .back_propagation(-1.0 * outcome);
         }
     }
 
@@ -136,7 +148,7 @@ impl MctsTreenode {
         self.n_val
     }
 
-    pub fn get_children(&self) -> &Vec<TreenodeRef> {
+    pub fn get_children(&self) -> &Vec<TreenodeRefStrong> {
         &self.children
     }
 
