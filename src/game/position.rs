@@ -55,14 +55,17 @@ impl Position {
         Ok(Position::new_xy(i, j))
     }
 
+    /// Returns the manhatten distance
     pub fn manhatten_dist(&self, other: &Position) -> usize {
         self.get_x().abs_diff(other.get_x()) + self.get_y().abs_diff(other.get_y())
     }
 
+    /// Returns the mask of the position
     pub fn get_pos_mask(&self) -> u128 {
         1 << self.num
     }
 
+    /// Returns the manhatten distance to the closest corner
     pub fn min_dist_to_corner(&self) -> usize {
         [
             Position::new_n(0).manhatten_dist(self),
@@ -75,36 +78,44 @@ impl Position {
         .unwrap()
     }
 
+    /// Create a position from x and y
     pub fn new_xy(x: usize, y: usize) -> Position {
         Position {
             num: x * BOARDSIZE + y,
         }
     }
 
+    /// Create a position from a number
     pub fn new_n(num: usize) -> Position {
         Position { num }
     }
 
+    /// Returns the x coordinate
     pub fn get_x(&self) -> usize {
         self.num / BOARDSIZE
     }
 
+    /// Returns the y coordinate
     pub fn get_y(&self) -> usize {
         self.num % BOARDSIZE
     }
 
+    /// Returns the number of the position
     pub fn get_num(&self) -> usize {
         self.num
     }
 
+    /// Returns true if the position is a throne
     pub fn is_throne(&self) -> bool {
         [0, 10, 60, 110, 120].contains(&self.get_num())
     }
 
+    /// Returns true if the position is a corner
     pub fn is_corner(&self) -> bool {
         [0, 10, 110, 120].contains(&self.get_num())
     }
 
+    /// Returns a vector of (sur_pos, one_after)
     pub fn get_sur_pos_and_one_after(&self) -> Vec<(Position, Position)> {
         let mut sur_pos_and_one_after = Vec::<(Position, Position)>::new();
 
@@ -142,6 +153,7 @@ impl Position {
         sur_pos_and_one_after
     }
 
+    /// Get all surrounding positions
     pub fn get_surrounding_pos(&self) -> Vec<Position> {
         let mut surrounding_pos = Vec::<Position>::new();
 

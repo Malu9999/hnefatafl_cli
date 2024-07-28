@@ -358,6 +358,7 @@ impl Board {
         }
     }
 
+    /// Performs the provided action
     pub fn perform_action(
         &mut self,
         action: &Action,

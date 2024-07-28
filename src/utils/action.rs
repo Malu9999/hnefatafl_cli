@@ -8,6 +8,7 @@ pub enum Action {
 }
 
 impl Action {
+    /// Parse an action from a string
     pub fn from_str(str: String) -> Option<Action> {
         let mut parts = str.split_whitespace();
 

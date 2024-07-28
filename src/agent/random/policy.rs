@@ -18,6 +18,7 @@ impl<T: Eval> BotInit for RandomBot<T> {
 }
 
 impl<T: Eval> Bot for RandomBot<T> {
+    /// returns a random move
     fn get_next_move(&mut self, board: &Board, _time: u128) -> Option<Move> {
         board.get_random_move()
     }

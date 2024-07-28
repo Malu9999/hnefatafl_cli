@@ -15,6 +15,7 @@ pub struct Network {
 }
 
 impl Network {
+    /// creates a new network
     pub fn new() -> Self {
         let vs = VarStore::new(Device::cuda_if_available());
 
@@ -48,18 +49,22 @@ impl Network {
         Self { net, vs, opt }
     }
 
+    /// loads the network from a checkpoint
     pub fn load(&mut self, path: &str) {
         let _ = self.vs.load(path);
     }
 
+    /// saves the network
     pub fn save(&self, path: &str) {
         self.vs.save(path).unwrap()
     }
 
+    /// performs a forward pass
     pub fn forward(&self, xs: &Tensor) -> Tensor {
         self.net.forward(&xs.flat_view())
     }
 
+    /// trains the network
     pub fn train(&mut self, data: Tensor, targets: Tensor, max_epochs: usize) {
         for epoch in 0..max_epochs {
             let logits = self.forward(&data);

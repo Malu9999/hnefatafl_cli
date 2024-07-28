@@ -37,7 +37,7 @@ impl Arena<'_> {
             replay_buffer: Vec::new(),
         }
     }
-    //let the two bots of the arena fight with set time limits in ms
+    /// let the two bots of the arena fight with set time limits in ms
     pub fn fight_or_be_forgotten(
         &mut self,
         time_to_think_black: u128,
@@ -95,7 +95,7 @@ impl Arena<'_> {
         }
     }
 
-    //let the two bots fight a number of times and write the replays and results into files
+    /// let the two bots fight a number of times and write the replays and results into files
     pub fn play_games(
         &mut self,
         num_games: usize,
@@ -155,8 +155,8 @@ impl Arena<'_> {
         println!("Finished");
     }
 
-    //title encoding: <time> <black_bot_type> <black_time_to_think> <white_bot_type> <white_time_to_think> <number_of_games_played>
-    //last line in result file: <avg num of turns> <standard deviation of number of turns> <black winrate>
+    /// title encoding: <time> <black_bot_type> <black_time_to_think> <white_bot_type> <white_time_to_think> <number_of_games_played>
+    /// last line in result file: <avg num of turns> <standard deviation of number of turns> <black winrate>
     fn write_fight_info(
         &self,
         output: &mut BufWriter<File>,
@@ -203,6 +203,7 @@ impl Arena<'_> {
     }
 }
 
+/// returns (mean, standard deviation)
 fn mean_and_variance(data: &Vec<usize>) -> (f64, f64) {
     let mut mean_sum = 0;
     let n = data.len() as f64;

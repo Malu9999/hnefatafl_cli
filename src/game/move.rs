@@ -20,6 +20,7 @@ pub struct Move {
 }
 
 impl Move {
+    /// Create a move from a string
     pub fn from_str(split: SplitWhitespace<'_>) -> Result<Move, ParseMoveError> {
         let l: Vec<&str> = split.take(4).collect();
         if l.len() != 4 {
@@ -48,18 +49,22 @@ impl Move {
         })
     }
 
+    /// Create a new move
     pub fn new(start_pos: Position, end_pos: Position) -> Move {
         Move { start_pos, end_pos }
     }
 
+    /// Get the start  position
     pub fn get_start_pos(&self) -> &Position {
         &self.start_pos
     }
 
+    /// Get the end position
     pub fn get_end_pos(&self) -> &Position {
         &self.end_pos
     }
 
+    /// Get the mask for the move
     pub fn get_mask(&self) -> u128 {
         self.get_start_pos().get_pos_mask() | self.get_end_pos().get_pos_mask()
     }

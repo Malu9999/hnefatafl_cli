@@ -135,6 +135,7 @@ impl<T: Eval> Mcts<T> {
         }
     }
 
+    /// returns the number of nodes in the tree
     #[allow(unused)]
     pub fn compute_depth(&self) -> usize {
         let mut current = Arc::clone(&self.tree_root);

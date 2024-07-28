@@ -11,7 +11,6 @@ use std::thread::{self};
 use agent::{alpha_beta::policy::AlphaBetaBot, mcts::policy::Mcts, random::policy::RandomBot};
 use agent::{Bot, BotInit};
 use eval::human_score::{HumanScore, HumanScoreParam};
-use eval::neural_net::NeuralNet;
 use eval::random_rollout::RandomRollout;
 use eval::EvalInit;
 use game::board::BOARDSIZE;
@@ -79,6 +78,7 @@ fn main() {
     }
 }
 
+/// choose bot
 fn choose_bot(color: PieceColor) -> (u128, Box<dyn Bot>) {
     let eval = HumanScore::new(HumanScoreParam {
         w_ring_1: 0.0,
@@ -101,11 +101,7 @@ fn choose_bot(color: PieceColor) -> (u128, Box<dyn Bot>) {
     let black_bot_choice = read_usize_in_range(1, 3);
 
     let bot: Box<dyn Bot> = if black_bot_choice == 1 {
-        //Box::new(RandomBot::new(2, RandomRollout::new(1)))
-        Box::new(AlphaBetaBot::new(
-            3,
-            NeuralNet::new("checkpoint.ot".to_string()),
-        ))
+        Box::new(RandomBot::new(2, RandomRollout::new(1)))
     } else if black_bot_choice == 2 {
         Box::new(Mcts::new(1.4, RandomRollout::new(1)))
     } else {
@@ -124,6 +120,7 @@ fn choose_bot(color: PieceColor) -> (u128, Box<dyn Bot>) {
     (time_limit, bot)
 }
 
+/// Lets the player interact with a bot
 fn game_loop(player_color: PieceColor, bot_time_limit: u128, bot: &mut Box<dyn Bot>) {
     println!("Welcome to Hnefatafl! :D");
     println!("You can make a move by typing 'mm X1 Y1 X2 Y2'.");
@@ -176,6 +173,7 @@ fn game_loop(player_color: PieceColor, bot_time_limit: u128, bot: &mut Box<dyn B
     }
 }
 
+/// Reads a string from the user
 fn read_string() -> Option<utils::action::Action> {
     let mut input = String::new();
     std::io::stdin()
@@ -184,6 +182,7 @@ fn read_string() -> Option<utils::action::Action> {
     Action::from_str(input)
 }
 
+/// Reads an integer from the user in the given range
 fn read_usize_in_range(min: usize, max: usize) -> usize {
     let mut input = String::new();
     let mut done = false;
@@ -213,6 +212,7 @@ fn read_usize_in_range(min: usize, max: usize) -> usize {
     result
 }
 
+/// Generates magic numbers
 #[allow(unused)]
 fn move_gen() {
     let move_gen = MoveGen::new();
@@ -225,6 +225,7 @@ fn move_gen() {
     }
 }
 
+/// Watches the game with an eval
 fn watch_game_with_eval() {
     /*let eval = HumanScore::new(HumanScoreParam {
         w_ring_1: 0.0,
@@ -271,6 +272,7 @@ fn watch_game_with_eval() {
     }
 }
 
+/// Trains the network
 fn simple_taining_loop() {
     let mut net = Network::new();
 
@@ -288,6 +290,7 @@ fn simple_taining_loop() {
     }
 }
 
+/// Trains the network in an alphazero fashion
 #[allow(unused)]
 fn alpha_zero_loop() {
     let mut net = Network::new();

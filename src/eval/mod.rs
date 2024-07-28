@@ -12,8 +12,10 @@ pub trait EvalInit {
 }
 
 pub trait Eval {
+    /// Returns the evaluation of the given board.
     fn get_eval(&self, board: &Board) -> f64;
 
+    /// Updates the evaluation with the given board.
     #[allow(unused)]
     fn update(&mut self, board: Board);
 }

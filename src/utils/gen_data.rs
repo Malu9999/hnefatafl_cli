@@ -16,10 +16,12 @@ pub struct Generator {
 }
 
 impl Generator {
+    /// Create a new generator
     pub fn new(num_games: usize) -> Generator {
         Generator { num_games }
     }
 
+    /// Generate training data
     pub fn generate(
         &self,
         fixed: bool,
@@ -77,6 +79,7 @@ impl Generator {
     }
 }
 
+/// Rollout a fixed number of games
 fn rollout_with_observations(
     num_rollouts: usize,
     fixed: bool,

@@ -40,6 +40,7 @@ impl MctsTreenode {
         }
     }
 
+    /// Creates a new child node
     pub fn new_child_node(parent: &TreenodeRefWeak, mov: Move) -> MctsTreenode {
         let parent_borrowed = parent.upgrade().unwrap();
 
@@ -48,6 +49,7 @@ impl MctsTreenode {
         // make move on child state and get captured positions
         child_state.make_move_captured_positions(&mov);
 
+        // get unexplored moves and shuffle them to get better results
         let mut unexplored_moves = child_state.get_legal_moves();
         unexplored_moves.shuffle(&mut thread_rng());
 

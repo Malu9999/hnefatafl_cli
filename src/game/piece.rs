@@ -11,10 +11,12 @@ pub enum Piece {
 }
 
 impl Piece {
+    /// returns true if the piece is a king
     pub fn is_king(&self) -> bool {
         matches!(self, Self::King(_))
     }
 
+    /// returns true if the piece is a defender
     pub fn is_defender(&self) -> bool {
         matches!(
             self,
@@ -22,6 +24,7 @@ impl Piece {
         )
     }
 
+    /// returns true if the piece is an attacker
     pub fn is_attacker(&self) -> bool {
         matches!(
             self,
@@ -29,6 +32,7 @@ impl Piece {
         )
     }
 
+    /// returns the color of the piece
     pub fn get_color(&self) -> PieceColor {
         match self {
             Self::King(color) => color.clone(),
@@ -36,6 +40,7 @@ impl Piece {
         }
     }
 
+    /// returns true if the piece is of the given color
     pub fn is_color(&self, color: &PieceColor) -> bool {
         match color {
             PieceColor::Attacker => self.is_attacker(),
@@ -43,6 +48,7 @@ impl Piece {
         }
     }
 
+    /// returns true if the piece is of the same color
     #[allow(unused)]
     pub fn same_color(&self, other: &Piece) -> bool {
         (self.is_attacker() && other.is_attacker()) || (self.is_defender() && other.is_defender())
@@ -50,6 +56,7 @@ impl Piece {
 }
 
 impl PieceColor {
+    /// flips the color
     pub fn flip(&mut self) {
         match self {
             Self::Attacker => *self = Self::Defender,
@@ -57,6 +64,7 @@ impl PieceColor {
         }
     }
 
+    /// returns the opposite color
     pub fn get_opposite(&self) -> PieceColor {
         match self {
             Self::Attacker => Self::Defender,
