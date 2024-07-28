@@ -34,7 +34,7 @@ fn main() {
     println!("1) Bot vs. Bot");
     println!("2) Human vs. Bot");
     println!("3) Training");
-    let mode = read_usize_in_range(1, 3);
+    let mode = read_usize_in_range(1, 4);
 
     if mode == 1 {
         println!("Playing Bot vs. Bot");
@@ -73,7 +73,9 @@ fn main() {
         game_loop(my_color, bot_time_limit, &mut bot);
     } else if mode == 3 {
         simple_taining_loop();
-    } else {
+    } else if mode == 4 {
+        watch_game_with_eval();
+    }else {
         println!("You didn't choose a valid play mode.");
     }
 
@@ -281,18 +283,68 @@ fn move_gen() {
     }
 }
 
-fn simple_taining_loop() {
-    let net = Network::new();
+fn watch_game_with_eval() {
+    //let mut alphabeta = AlphaBetaBot::new(3, eval);
 
-    for i in 0..100 {
+    let mut mcts = Mcts::new(2.0, RandomRollout::new(1));
+    let mut random = RandomBot::new(2, RandomRollout::new(1));
+    //let mut mcts = Mcts::new(Some(&board), 2.0, RandomRollout::new(1));
+
+    //net.train(observations, targets, 1000, &vs);
+
+    //let _ = vs.save("test.net");
+
+    let mut turn = PieceColor::Attacker;
+
+    let mut board = Board::new();
+
+    while !board.is_game_over() {
+        //mcts.reset(&board);
+
+        let mut net = Network::new();
+
+        net.load("checkpoint.ot");
+
+        let mov = match turn {
+            PieceColor::Attacker => random.get_next_move(&board, 100).unwrap(),
+            PieceColor::Defender => random.get_next_move(&board, 1000).unwrap(),
+        };
+
+        //let mov = board.get_random_move().unwrap();
+        println!("{}", mov);
+        //mcts.print_root();
+
+        let captured = board.make_move_captured_positions(&mov);
+
+        let obs = board
+            .get_observation()
+            .unsqueeze(0)
+            .to_device(Device::cuda_if_available());
+        println!("{:?}", f32::try_from(net.forward(&obs)));
+
+        //println!("{}", board.get_king_pos().unwrap().min_dist_to_corner());
+
+        turn.flip();
+        println!("{}", board);
+
+        thread::sleep(time::Duration::from_millis(500));
+    }
+}
+
+fn simple_taining_loop() {
+    let mut net = Network::new();
+
+    //net.load("checkpoint.ot");
+
+    for i in 0..1_000_000 {
         net.save("old.ot");
 
         // gen training data
-        let gen = Generator::new(32);
+        let gen = Generator::new(116);
         let (observations, targets, _, _) =
             gen.generate(false, "old.ot".to_string(), "old.ot".to_string());
 
-        net.train(observations, targets, 10);
+        net.train(observations, targets, 50);
     }
 }
 
@@ -303,7 +355,7 @@ fn alpha_zero_loop() {
         net.save("old.ot");
 
         // gen training data
-        let gen = Generator::new(32);
+        let gen = Generator::new(116);
         let (observations, targets, _, _) =
             gen.generate(false, "old.ot".to_string(), "old.ot".to_string());
 

@@ -113,7 +113,7 @@ impl Board {
     pub fn get_observation(&self) -> Tensor {
         let attack_vec: Vec<f32> = (0..BOARDSIZE * BOARDSIZE)
             .map(|i| {
-                if self.attackers & 1 << i == 1 {
+                if self.attackers >> i & 1 == 1 {
                     1.0
                 } else {
                     0.0
@@ -122,7 +122,7 @@ impl Board {
             .collect();
         let defend_vec: Vec<f32> = (0..BOARDSIZE * BOARDSIZE)
             .map(|i| {
-                if self.defenders & 1 << i == 1 {
+                if self.defenders >> i & 1 == 1 {
                     1.0
                 } else {
                     0.0
@@ -130,7 +130,7 @@ impl Board {
             })
             .collect();
         let king_vec: Vec<f32> = (0..BOARDSIZE * BOARDSIZE)
-            .map(|i| if self.king & 1 << i == 1 { 1.0 } else { 0.0 })
+            .map(|i| if self.king >> i & 1 == 1 { 1.0 } else { 0.0 })
             .collect();
         let player_vec: Vec<f32> = (0..BOARDSIZE * BOARDSIZE)
             .map(|_| match self.player {

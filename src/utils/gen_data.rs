@@ -65,8 +65,6 @@ impl Generator {
             total_white_wins += white_wins;
         }
 
-        println!("{}", observations.len());
-
         let observations_tensor =
             Tensor::stack(&observations, 0).to_device(Device::cuda_if_available());
         let targets_tensor = Tensor::from_slice(&targets)

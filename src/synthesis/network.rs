@@ -60,7 +60,7 @@ impl Network {
     }
 
     pub fn train(&self, data: Tensor, targets: Tensor, max_epochs: usize) {
-        let mut opt = nn::Adam::default().build(&self.vs, 1e-4).unwrap();
+        let mut opt = nn::Adam::default().build(&self.vs, 1e-3).unwrap();
 
         for epoch in 0..max_epochs {
             let logits = self.forward(&data);
